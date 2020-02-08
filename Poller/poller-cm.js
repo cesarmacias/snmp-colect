@@ -42,7 +42,7 @@ async function run() {
             let val = conf.iterable;
             rl.on('line', (line) => {
                 let doc = JSON.parse(line);
-                if (doc.tag[val] && doc.tag[val] != "0.0.0.0" && doc.tag[val2] && reg_filter.test(doc.tag[val2])){
+                if (doc.tag[val] && doc.tag[val] !== "0.0.0.0" && doc.tag[val2] && reg_filter.test(doc.tag[val2])){
                     let host = doc.tag[val];
                     poller_cm(host, doc, conf);
                     //setTimeout(() => { poller_cm(host, doc, conf); }, 1000);
