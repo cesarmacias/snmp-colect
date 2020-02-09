@@ -1,9 +1,31 @@
 <component name="ProjectDictionaryState">
   <dictionary name="cmaciasd">
     <words>
+      <w>acepta</w>
+      <w>archivo</w>
+      <w>asocia</w>
       <w>cmts</w>
+      <w>configuracion</w>
+      <w>datos</w>
+      <w>dispositivo</w>
+      <w>dividir</w>
+      <w>falta</w>
+      <w>fuente</w>
+      <w>funcion</w>
+      <w>grande</w>
+      <w>obtenidos</w>
       <w>oids</w>
+      <w>parametro</w>
+      <w>poleo</w>
       <w>poller</w>
+      <w>pollertime</w>
+      <w>procesar</w>
+      <w>proceso</w>
+      <w>procesos</w>
+      <w>rawdat</w>
+      <w>snmpwalk</w>
+      <w>valores</w>
+      <w>varbinds</w>
     </words>
   </dictionary>
 </component>
