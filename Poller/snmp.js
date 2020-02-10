@@ -3,34 +3,25 @@
 
 const snmp = require("net-snmp");
 const fs = require("fs");
-
-/* Funcion para dividir un array en un array de array para procesos que no acepta un array muy grande
- *  * */
-function chunkArray(myArray, chunk_size) {
-    let results = [];
-    while (myArray.length) {
-        results.push(myArray.splice(0, chunk_size));
-    }
-    return results;
-}
+const async = require("async");
 
 /* Funcion para procesar los datos obtenidos de un snmpwalk a un dispositivo, los valores los asocia a "field" o "tag"
  *  * */
 function feedCb(varbinds) {
     let self = this;
-    for (var i = 0; i < varbinds.length; i++) {
+    for (let i = 0; i < varbinds.length; i++) {
         if (snmp.isVarbindError(varbinds[i]))
             console.error(snmp.varbindError(varbinds[i]).toString);
         else {
             let index = varbinds[i].oid.substring(self.mib.oid.length + 1);
             let value = varbinds[i].value;
             let type = "field";
-            if (varbinds[i].type == snmp.ObjectType.OctetString)
+            if (varbinds[i].type === snmp.ObjectType.OctetString)
                 if ("type" in self.mib && self.mib.type === "hex")
-                    value = varbinds[i].value.toString("hex")
+                    value = varbinds[i].value.toString("hex");
                 else
                     value = varbinds[i].value.toString();
-            if (varbinds[i].type == snmp.ObjectType.Counter64) {
+            if (varbinds[i].type === snmp.ObjectType.Counter64) {
                 value = 0;
                 for (let x of varbinds[i].value.values()) {
                     value *= 256;
@@ -48,8 +39,8 @@ function feedCb(varbinds) {
 
 /* Funcion para leer la configuracion para el proceso de poleo snmp, fuente un archivo JSON
  *  * */
-function read_config(file, inh) {
-    let promise = new Promise((resolve, reject) => {
+async function read_config(file, inh) {
+    return new Promise((resolve, reject) => {
         let config;
         try {
             let rawdat = fs.readFileSync(file, 'utf8');
@@ -62,40 +53,25 @@ function read_config(file, inh) {
         });
         if ("options" in config)
             if ("version" in config.options)
-                if (config.options.version == "1")
+                if (config.options.version === "1")
                     config.options.version = snmp.Version1;
                 else
                     config.options.version = snmp.Version2c;
         if (!("maxRepetitions" in config)) config.maxRepetitions = 20;
+        if (!("limit" in config)) config.limit = 3;
+        if (!("time" in config)) config.time = true;
         resolve(config);
     });
-    return promise;
-}
-
-/* Funcion para cargar la configuracion previamente leida
- *  * */
-async function load_config(config) {
-    let promise = new Promise((resolve, reject) => {
-        if ("options" in config)
-            if ("version" in config.options)
-                if (config.options.version == "1")
-                    config.options.version = snmp.Version1;
-                else
-                    config.options.version = snmp.Version2c;
-        if (!("maxRepetitions" in config)) config.maxRepetitions = 20;
-        resolve(config);
-    });
-    return promise;
 }
 
 /* Funcion para obtener datos los datos tipo tabla (indice compartido) por SNMP
  *  * */
-function get_table(target, comm, options, oids, max, limit) {
-    let promise = new Promise((resolve, reject) => {
+async function get_table(target, comm, options, oids, max, limit) {
+    return new Promise((resolve, reject) => {
         let obj = {};
         let session = snmp.createSession(target, comm, options);
         async.eachLimit(oids, limit, (oid, callback) => {
-            session.subtree(oid.oid, max, feedCb.bind({ mib: oid, resp: obj }), (error) => {
+            session.subtree(oid.oid, max, feedCb.bind({mib: oid, resp: obj}), (error) => {
                 if (error)
                     console.error("table|" + target + "|" + oid.oid + "|" + error.toString());
                 callback();
@@ -109,13 +85,12 @@ function get_table(target, comm, options, oids, max, limit) {
             resolve(obj);
         });
     });
-    return promise;
 }
 
 /* Funcion para obtener datos snmpget para ser heredados en las tablas
  *  * */
 async function get_oids(target, comm, options, oids) {
-    let promise = new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         let session = snmp.createSession(target, comm, options);
         session.get(Object.keys(oids), (error, varbinds) => {
             let resp = {};
@@ -125,7 +100,7 @@ async function get_oids(target, comm, options, oids) {
                 resp = varbinds.reduce((vbs, vb) => {
                     if (!(snmp.isVarbindError(vb))) {
                         vbs[oids[vb.oid]] = vb.value;
-                        if (vb.type == snmp.ObjectType.OctetString) vbs[oids[vb.oid]] = vb.value.toString();
+                        if (vb.type === snmp.ObjectType.OctetString) vbs[oids[vb.oid]] = vb.value.toString();
                     }
                     return vbs;
                 }, {});
@@ -134,13 +109,12 @@ async function get_oids(target, comm, options, oids) {
             resolve(resp);
         });
     });
-    return promise;
 }
 
 /* Funcion para obtener varios datos por snmpget, desde un array de OIDS
  * * */
 async function get_all(target, comm, options, oids) {
-    let promise = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         let session = snmp.createSession(target, comm, options);
         let _oids = Object.keys(oids);
         let resp = {};
@@ -150,14 +124,14 @@ async function get_all(target, comm, options, oids) {
             if (error) {
                 reject(error);
             } else {
-                varbinds.forEach((vb) => {
+                for (const vb of varbinds) {
                     if (!(snmp.isVarbindError(vb))) {
                         let type = "field";
                         if ("tag" in oids[vb.oid] && oids[vb.oid].tag)
                             type = "tag";
                         let name = oids[vb.oid].name;
                         let value = vb.value;
-                        if (vb.type == snmp.ObjectType.OctetString) {
+                        if (vb.type === snmp.ObjectType.OctetString) {
                             value = vb.value.toString();
                             if ("type" in oids[vb.oid] && oids[vb.oid].type === "hex")
                                 value = vb.value.toString("hex");
@@ -172,7 +146,7 @@ async function get_all(target, comm, options, oids) {
                                 }
                             }
                         }
-                        if (vb.type == snmp.ObjectType.Counter64) {
+                        if (vb.type === snmp.ObjectType.Counter64) {
                             value = 0;
                             for (let x of vb.value.values()) {
                                 value *= 256;
@@ -181,19 +155,17 @@ async function get_all(target, comm, options, oids) {
                         }
                         resp[type][name] = value;
                     }
-                });
+                }
                 resolve(resp);
             }
             session.close();
         });
     });
-    return promise;
 }
 
 module.exports = {
     get_table,
     get_oids,
     get_all,
-    read_config,
-    load_config
-}
+    read_config
+};
