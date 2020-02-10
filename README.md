@@ -22,7 +22,7 @@ The configuration input file are divided in:
 - OIDS_GET, OIDS that response only one value, can parse STRING into multiple object usin a REGEX.
 
 Examples:
-- config/conf.json -> simple ifmib for 2 devices
+- conf/conf.json -> simple ifmib for 2 devices
 
 # Roadmap
 
