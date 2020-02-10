@@ -19,7 +19,8 @@ The configuration input file are divided in:
 - Information of hosts and SNMP options.
 - Inherit OIDS, OIDS with only one response that will be repeted in all responses from tables (example hostname)
 - Tables, OIDS that have the same INDEX like if-mib, can configure many tables any table with especifict measurement.
-- OIDS_GET, OIDS that response only one value, can parse STRING into multiple object usin a REGEX
+- OIDS_GET, OIDS that response only one value, can parse STRING into multiple object usin a REGEX.
+
 Examples:
 - config/conf.json -> simple ifmib for 2 devices
 
