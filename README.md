@@ -15,56 +15,13 @@ Now we can do more with less CPU resources
 Example: the ifinoctecs that are a counter and is not useful to index and has a cost of disk the action of index.
 
 # Cnfiguration JSON File
-// List of hosts
-"hosts": [ "192.168.0.1", "192.168.0.2" ],
-// SNMP comunity to all hosts
-  "community": "PUBLIC",
-// SNMP options
-  "options": {
-    "version": "2c",
-    "retries": 5,
-    "timeout": 1000,
-    "port": 161
-  },
-  //OID that need to inherit in all data to all measurments 
-  "inh_oids": {
-    "1.3.6.1.2.1.1.5.0": "hostname",
-    "1.3.6.1.2.1.1.6.0": "syslocation"
-  },
-  "table": [
-    {
-      "options": {
-        "measurement": "snmpif",
-        "index": true, // add pollertime EPOCH
-        "time": true //add index of OID
-      },
-      "oids": [
-        {
-          "name": "ifName",
-          "oid": "1.3.6.1.2.1.31.1.1.1.1",
-          "tag": true
-        },
-        {
-          "name": "ifAlias",
-          "oid": "1.3.6.1.2.1.31.1.1.1.18",
-          "tag": true
-        },
-        {
-          "name": "ifSpeed",
-          "oid": "1.3.6.1.2.1.31.1.1.1.15"
-        },
-        {
-          "name": "ifHCInOctets",
-          "oid": "1.3.6.1.2.1.31.1.1.1.6"
-        }
-       ]
-     }
-   ]
-
-Example Result (two routers with 1 interface):
-measurement_name; tag.ifAlias; tag.ifName; field.ifHCInOctets; field.ifSpeed ;hostname; agent_host; index; pollertime
-snmpif; to_router2; Gig 1/0/0; 12903250; 10000; router1; 192.168.0.1; 100; 1581369703
-snmpif; to_router1; Gig 1/0/0; 14905250; 10000; router2; 192.168.0.2; 101; 1581369703
+The configuration input file are divided in:
+- Information of hosts and SNMP options.
+- Inherit OIDS, OIDS with only one response that will be repeted in all responses from tables (example hostname)
+- Tables, OIDS that have the same INDEX like if-mib, can configure many tables any table with especifict measurement.
+- OIDS_GET, OIDS that response only one value, can parse STRING into multiple object usin a REGEX
+Examples:
+- config/conf.json -> simple ifmib for 2 devices
 
 # Roadmap
 
