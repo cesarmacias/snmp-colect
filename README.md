@@ -65,3 +65,17 @@ Example Result (two routers with 1 interface):
 measurement_name; tag.ifAlias; tag.ifName; field.ifHCInOctets; field.ifSpeed ;hostname; agent_host; index; pollertime
 snmpif; to_router2; Gig 1/0/0; 12903250; 10000; router1; 192.168.0.1; 100; 1581369703
 snmpif; to_router1; Gig 1/0/0; 14905250; 10000; router2; 192.168.0.2; 101; 1581369703
+
+# Roadmap
+
+Version 0.1 (master):
+- list of hosts by file
+- suport octect 64bits
+- multiple tables
+- inherit data to all tables
+- suport HEX OCTECTSTING
+- OID type get, with response STRING cab be parsed to many objects by REGEX (typical use SYSDESCRIP)
+
+Requests:
+- list of hosts can be a SQL to database
+- list of hosts can be stdin (to execute from result of another script)
