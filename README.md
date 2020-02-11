@@ -24,6 +24,10 @@ The configuration input file are divided in:
 Examples:
 - conf/conf.json -> simple ifmib for 2 devices
 
+# Execution
+
+node poller.js --config=conf/conf.json
+
 # Roadmap
 
 Version 0.1 (master):
