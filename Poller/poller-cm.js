@@ -26,7 +26,7 @@ async function poller_cm(target, obj, conf) {
         })
         .catch(() => {
                 if ("tag" in obj)
-                    obj.tag.CmPollerError = true;
+                    obj.tag.CmSnmpError = true;
             }
         )
         .finally(() => {
