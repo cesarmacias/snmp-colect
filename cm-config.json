@@ -1,0 +1,90 @@
+{
+  "community": "XXXXXXX",
+  "iterable": "CmtsCmIpAddress",
+  "options": {
+    "version": "2c",
+    "retries": 3,
+    "timeout": 1000,
+    "port": 161
+  },
+  "oids_get": {
+    "1.3.6.1.2.1.10.127.1.2.2.1.3.2": {
+      "name": "CmStatusTxPower"
+    },
+    "1.3.6.1.2.1.10.127.1.1.1.1.6.3": {
+      "name": "DownChannelPower"
+    },
+    "1.3.6.1.2.1.10.127.1.2.2.1.5.2": {
+      "name": "CmStatusLostSyncs"
+    },
+    "1.3.6.1.2.1.1.1.0": {
+      "name": "sysDescr",
+      "type": "regex",
+      "regex": "VENDOR:\\s([\\w|\\.|\\s|,|-]+);\\sBOOTR:\\s[\\w|\\.|\\s|,|-]+;\\sSW_REV:\\s([\\w|\\.|\\s|,|-]+);\\sMODEL:\\s([\\w|\\.|\\s|,|-]+)",
+      "map": ["Vendor", "Firmware", "Model"],
+      "tag": true
+    },
+    "1.3.6.1.2.1.10.127.1.2.2.1.4.2": {
+      "name": "CmStatusResets"
+    },
+    "1.3.6.1.2.1.10.127.1.1.4.1.6.3": {
+      "name": "SigQMicroreflections"
+    },
+    "1.3.6.1.4.1.4115.1.3.3.1.1.1.2.4.0": {
+      "name": "StatusEmta"
+    },
+    "1.3.6.1.2.1.10.127.1.1.4.1.8.3": {
+      "name": "SigQExtUnerroreds"
+    },
+    "1.3.6.1.2.1.10.127.1.1.4.1.9.3": {
+      "name": "SigQExtCorrecteds"
+    },
+    "1.3.6.1.2.1.10.127.1.1.4.1.10.3": {
+      "name": "SigQExtUncorrectables"
+    },
+    "1.3.6.1.2.1.10.127.1.1.4.1.5.3": {
+      "name": "SigQSignalNoise"
+    },
+    "1.3.6.1.2.1.31.1.1.1.10.2": {
+      "name": "ifiHCOutOctets_1"
+    },
+    "1.3.6.1.2.1.31.1.1.1.6.2": {
+      "name": "ifiHCInOctets_1"
+    },
+    "1.3.6.1.2.1.10.127.1.1.2.1.2.4": {
+      "name": "UpStreamFrecuency"
+    },
+    "1.3.6.1.2.1.1.3.0": {
+      "name": "SysUptime"
+    },
+    "1.3.6.1.4.1.4115.1.20.1.1.2.2.1.21.200": {
+      "name": "CmModeOp",
+      "tag": true,
+      "vendor": ["Arris"]
+    },
+    "1.3.6.1.4.1.4115.1.3.4.1.1.10.0": {
+      "name": "D3",
+      "type": "regex",
+      "regex": "DOCSIS3.{3}(\\d)x(\\d)",
+      "map": ["DownNumCh", "UpNumCh"],
+      "tag": true,
+      "vendor": ["Arris"]
+    },
+    "1.3.6.1.4.1.4413.2.2.2.1.2.3.6.0": {
+      "name": "DownNumCh",
+      "tag": true,
+      "vendor": ["Technicolor", "Sagemcom"]
+    },
+    "1.3.6.1.4.1.4413.2.2.2.1.2.3.7.0": {
+      "name": "UpNumCh",
+      "tag": true,
+      "vendor": ["Technicolor", "Sagemcom"]
+    },
+    "1.3.6.1.2.1.2.2.1.13.2": {
+      "name": "ifInDiscards"
+    },
+    "1.3.6.1.2.1.2.2.1.14.2": {
+      "name": "ifInErrors"
+    }
+  }
+}
