@@ -73,7 +73,7 @@ async function run() {
           macAddress &&
           reg_filter.test(macAddress)
         ) {
-          let vendorName = vendor.vendor;
+          let vendorName = vendor ? vendor.vendor : "";
           conf.oids_get = filterOids_get(conf.oids_get, vendorName);
           poller_cm(host, doc, conf);
           //setTimeout(() => { poller_cm(host, doc, conf); }, 1000);
