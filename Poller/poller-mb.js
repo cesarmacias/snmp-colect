@@ -16,10 +16,6 @@ const rl = readline.createInterface({
   terminal: false,
 });
 
-let rawdata = fs.readFileSync("../snmp-colect/vendor-list.json");
-let vendorList = JSON.parse(rawdata);
-console.log(vendorList);
-
 function filterOids_get(oids_get, vendorName) {
   let keyNames = Object.keys(oids_get);
   let oids = {};
