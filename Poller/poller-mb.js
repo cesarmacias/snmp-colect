@@ -11,7 +11,7 @@ const reg_filter = /^(?!000308|0005ca|0090ea|002697)[0-9a-f]{6}/;
 var val2 = "CmtsCmMac";
 
 const rl = readline.createInterface({
-  input: fs.createReadStream("../snmp-colect/lst-cm.json"),
+  input: process.stdin,
   output: process.stdout,
   terminal: false,
 });
@@ -72,8 +72,7 @@ async function run() {
           host &&
           host !== "0.0.0.0" &&
           macAddress &&
-          reg_filter.test(macAddress) &&
-          vendor
+          reg_filter.test(macAddress)
         ) {
           let vendorName = vendor.vendor;
           conf.oids_get = filterOids_get(conf.oids_get, vendorName);
