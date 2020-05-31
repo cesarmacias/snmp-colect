@@ -11,6 +11,7 @@ const reg_filter = /^(?!000308|0005ca|0090ea|002697)[0-9a-f]{6}/;
 var val2 = "CmtsCmMac";
 
 const rl = readline.createInterface({
+  // input: fs.createReadStream("../snmp-colect-master/lst-cm.json"),
   input: process.stdin,
   output: process.stdout,
   terminal: false,
@@ -19,6 +20,7 @@ const rl = readline.createInterface({
 let rawdata = fs.readFileSync("../vendor-list.json");
 let vendorList = JSON.parse(rawdata);
 console.log(vendorList);
+
 function filterOids_get(oids_get, vendorName) {
   let keyNames = Object.keys(oids_get);
   let oids = {};
@@ -26,6 +28,11 @@ function filterOids_get(oids_get, vendorName) {
     if (!oids_get[key].vendor || oids_get[key].vendor.includes(vendorName))
       oids[key] = oids_get[key];
   });
+
+  // console.log(oids);
+  // console.log("------------------");
+  // console.log(oids_get);
+  // console.log("------------------");
 
   return oids;
 }
@@ -74,8 +81,12 @@ async function run() {
           reg_filter.test(macAddress)
         ) {
           let vendorName = vendor ? vendor.vendor : "";
-          conf.oids_get = filterOids_get(conf.oids_get, vendorName);
-          poller_cm(host, doc, conf);
+          // conf.oids_get = filterOids_get(conf.oids_get, vendorName);
+          let confOids_getFiltered = {
+            ...conf,
+            oids_get: filterOids_get(conf.oids_get, vendorName),
+          };
+          poller_cm(host, doc, confOids_getFiltered);
           //setTimeout(() => { poller_cm(host, doc, conf); }, 1000);
         } else {
           if ("tag" in doc) doc.tag.CmPollerError = true;
