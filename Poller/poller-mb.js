@@ -66,20 +66,19 @@ async function run() {
         let host = doc.tag[val];
         let macAddress = doc.tag[val2];
 
-        let vendor = vendorList.find((vendorItem) => {
-          return (
-            vendorItem.oui.findIndex((ouiItem) => {
-              return ouiItem == macAddress.substring(0, 6);
-            }) != -1
-          );
-        });
-
         if (
           host &&
           host !== "0.0.0.0" &&
           macAddress &&
           reg_filter.test(macAddress)
         ) {
+          let vendor = vendorList.find((vendorItem) => {
+            return (
+              vendorItem.oui.findIndex((ouiItem) => {
+                return ouiItem == macAddress.substring(0, 6);
+              }) != -1
+            );
+          });
           let vendorName = vendor ? vendor.vendor : "";
           // conf.oids_get = filterOids_get(conf.oids_get, vendorName);
           let confOids_getFiltered = {
