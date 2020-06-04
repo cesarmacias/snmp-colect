@@ -17,9 +17,6 @@ const rl = readline.createInterface({
   terminal: false,
 });
 
-let rawdata = fs.readFileSync("../vendor-list.json");
-let vendorList = JSON.parse(rawdata);
-
 function filterOids_get(oids_get, vendorName) {
   let keyNames = Object.keys(oids_get);
   let oids = {};
@@ -59,6 +56,8 @@ async function run() {
     .read_config(args.config, expect)
     .then(async (conf) => {
       let val = conf.iterable;
+      let rawdata = fs.readFileSync(conf.vendorfile);
+      let vendorList = JSON.parse(rawdata);
       rl.on("line", (line) => {
         let doc = JSON.parse(line);
 
