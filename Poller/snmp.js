@@ -53,7 +53,7 @@ async function feedCb(varbinds) {
                 value += x;
             }
         } else value = varbinds[i].value;
-        if ("conversion" in self.mib && self.mib.type === "ipv4") value = await addr_convert(value);
+        if ("conversion" in self.mib && self.mib.conversion === "ipv4") value = await addr_convert(value);
         type = "tag" in self.mib && self.mib.tag ? "tag" : "field";
         if (!(index in self.resp)) self.resp[index] = {};
         if (!("tag" in self.resp[index])) self.resp[index].tag = {};
