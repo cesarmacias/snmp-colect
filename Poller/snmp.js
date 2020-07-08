@@ -4,7 +4,7 @@
 const snmp = require("net-snmp");
 const fs = require("fs");
 const async = require("async");
-const addr = require('ip-address');
+const addr = require("ip-address");
 
 /*
 Funcion para convetir el valor recibido en IPv4
