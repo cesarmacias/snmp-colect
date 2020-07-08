@@ -6,9 +6,9 @@ const poller = require("./snmp.js");
 const args = require("minimist")(process.argv.slice(2));
 const fs = require("fs");
 
-const reg_filter = /^(?!000308|0005ca|0090ea|002697)[0-9a-f]{6}/;
+//const reg_filter = /^(?!000308|0005ca|0090ea|002697)[0-9a-f]{6}/;
 
-const val2 = "CmtsCmMac";
+//const val2 = "CmtsCmMac";
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -44,19 +44,17 @@ async function poller_cm(target, obj, conf) {
 }
 
 async function run() {
-    let expect = ["options", "community", "oids_get", "iterable"];
+    let expect = ["options", "community", "oids_get", "iterable", "filtered", "filter"];
     poller
         .read_config(args.config, expect)
         .then(async (conf) => {
-            let val = conf.iterable;
-            let rawdata = fs.readFileSync(conf.vendorfile);
-            let vendorList = JSON.parse(rawdata);
+            const rawdata = fs.readFileSync(conf.vendorfile);
+            const vendorList = JSON.parse(rawdata);
+            const reg_filter = conf.filter;
             rl.on("line", (line) => {
                 let doc = JSON.parse(line);
-
-                let host = doc.tag[val];
-                let macAddress = doc.tag[val2];
-
+                let host = doc.tag[conf.iterable];
+                let macAddress = doc.tag[conf.filtered];
                 if (
                     host &&
                     host !== "0.0.0.0" &&
@@ -71,13 +69,11 @@ async function run() {
                         );
                     });
                     let vendorName = vendor ? vendor.vendor : "";
-                    // conf.oids_get = filterOids_get(conf.oids_get, vendorName);
                     let confOids_getFiltered = {
                         ...conf,
                         oids_get: filterOids_get(conf.oids_get, vendorName),
                     };
                     poller_cm(host, doc, confOids_getFiltered);
-                    //setTimeout(() => { poller_cm(host, doc, conf); }, 1000);
                 } else {
                     if ("tag" in doc) doc.tag.CmPollerError = true;
                     console.log(JSON.stringify(doc));

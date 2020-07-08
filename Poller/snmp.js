@@ -17,12 +17,13 @@ async function addr_convert(value) {
             if (ipv4.isValid()) {
                 resolve(ipv4.address);
             } else {
-                value = value.replace(/[:.]/g, '');
+                value = value.replace(/[:.\s]/g, '');
                 let reg = /^[0-9a-fA-F]{8}$/g;
                 if (reg.test(value)) {
                     ipv4 = new addr.Address4.fromHex(value);
                     if (ipv4.isValid())
                         resolve(ipv4.address);
+                    else reject("Not IPv4");
                 } else reject("Not IPv4");
             }
         } else if (typeof value === 'number') {
