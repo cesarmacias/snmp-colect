@@ -1,22 +1,19 @@
 /*jslint node: true */
 'use strict';
 
-import snmp from "net-snmp";
-
-import fs from "fs";
-
-import async from "async";
-
-import addr from "ip-address";
+const snmp = require("net-snmp");
+const fs = require("fs");
+const async = require("async");
+const addr = require("ip-address");
 
 /*
 Funcion para convetir el valor recibido en IPv4
 */
 async function addr_convert(value) {
-    return new Promise( (resolve, reject) => {
+    return new Promise((resolve, reject) => {
         let ipv4;
         if (typeof value === 'string') {
-            ipv4 = new addr.Address4( value );
+            ipv4 = new addr.Address4(value);
             if (ipv4.isValid()) {
                 resolve( ipv4.address );
             } else {
