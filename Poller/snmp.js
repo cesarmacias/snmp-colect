@@ -1,22 +1,19 @@
 /*jslint node: true */
 'use strict';
 
-import snmp from "net-snmp";
-
-import fs from "fs";
-
-import async from "async";
-
-import addr from "ip-address";
+const snmp = require("net-snmp");
+const fs = require("fs");
+const async = require("async");
+const addr = require("ip-address");
 
 /*
 Funcion para convetir el valor recibido en IPv4
 */
 async function addr_convert(value) {
-    return new Promise( (resolve, reject) => {
+    return new Promise((resolve, reject) => {
         let ipv4;
         if (typeof value === 'string') {
-            ipv4 = new addr.Address4( value );
+            ipv4 = new addr.Address4(value);
             if (ipv4.isValid()) {
                 resolve( ipv4.address );
             } else {
@@ -179,46 +176,22 @@ async function get_oids(target, comm, options, oids) {
 /* Funcion para obtener varios datos por snmpget, desde un array de OIDS
  * * */
 async function get_all(target, comm, options, oids) {
-    return new Promise( (resolve, reject) => {
-        let session = snmp.createSession( target, comm, options );
-        let _oids = Object.keys( oids );
+    return new Promise(async (resolve, reject) => {
+        let session = snmp.createSession(target, comm, options);
+        let _oids = Object.keys(oids);
         let resp = {};
         resp.tag = {};
         resp.field = {};
-        session.get( _oids, (error, varbinds) => {
+        session.get(_oids, async (error, varbinds) => {
             if (error) {
-                reject( error );
+                reject(error);
             } else {
                 for (const vb of varbinds) {
-                    if (!(snmp.isVarbindError( vb ))) {
-                        let type = "field";
-                        if ("tag" in oids[vb.oid] && oids[vb.oid].tag)
-                            type = "tag";
-                        let name = oids[vb.oid].name;
-                        let value = vb.value;
-                        if (vb.type === snmp.ObjectType.OctetString) {
-                            value = vb.value.toString();
-                            if ("type" in oids[vb.oid] && oids[vb.oid].type === "hex")
-                                value = vb.value.toString( "hex" );
-                            if ("type" in oids[vb.oid] && oids[vb.oid].type === "regex") {
-                                if ("regex" in oids[vb.oid] && "map" in oids[vb.oid]) {
-                                    let arr = value.match( new RegExp( oids[vb.oid].regex ) );
-                                    if (arr) {
-                                        value = {};
-                                        for (let i = 1, len = oids[vb.oid].map.length; i <= len; i++)
-                                            value[oids[vb.oid].map[i - 1]] = arr[i];
-                                    }
-                                }
-                            }
-                        }
-                        if (vb.type === snmp.ObjectType.Counter64) {
-                            value = 0;
-                            for (let x of vb.value.values()) {
-                                value *= 256;
-                                value += x;
-                            }
-                        }
-                        resp[type][name] = value;
+                    if (!(snmp.isVarbindError(vb))) {
+                        let mib = oids[vb.oid];
+                        let type = "tag" in mib && mib.tag ? "tag" : "field";
+                        let name = mib.name;
+                        resp[type][name] = await vb_transform(vb, mib);
                     }
                 }
                 resolve( resp );
@@ -229,28 +202,29 @@ async function get_all(target, comm, options, oids) {
 }
 
 /* Funcion para obtener datos tipo walk por SNMP
- *  * */
+ *  *
 async function get_bulk(target, comm, options, oids, nonrep, maxrep) {
-    return new Promise( (resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         const nonRepeaters = nonrep || 0;
         const maxRepetitions = maxrep || 30;
-        let session = snmp.createSession( target, comm, options );
-        let _oids = Object.keys( oids );
+        let session = snmp.createSession(target, comm, options);
+        let _oids = Object.keys(oids);
         let resp = {};
         resp.tag = {};
         resp.field = {};
-        session.getBulk( _oids, nonRepeaters, maxRepetitions, (error, varbinds) => {
+        session.getBulk(_oids, nonRepeaters, maxRepetitions, async (error, varbinds) => {
             if (error) {
-                reject( error );
+                reject(error);
             } else {
                 // step through the non-repeaters which are single varbinds
                 for (let i = 0; i < nonRepeaters; i++) {
                     let vb = varbinds[i];
                     if (i >= varbinds.length) break;
-                    if (!snmp.isVarbindError( vb )) {
-                        let type = "tag" in oids[vb.oid] && oids[vb.oid].tag ? "tag" : "field";
-                        let name = oids[vb.oid].name;
-                        resp[type][name] = vb_transform( vb, oids[vb.oid] );
+                    if (!snmp.isVarbindError(vb)) {
+                        let mib = oids[_oids[i]];
+                        let type = "tag" in mib && mib.tag ? "tag" : "field";
+                        let name = mib.name;
+                        resp[type][name] = await vb_transform(vb, mib);
                     }
                 }
                 // then step through the repeaters which are varbind arrays
@@ -261,7 +235,7 @@ async function get_bulk(target, comm, options, oids, nonrep, maxrep) {
                     let arr = [];
                     for (let vb of varbinds[i])
                         if (!snmp.isVarbindError( vb ))
-                            arr.push( vb_transform( vb, mib ) );
+                            arr.push(await vb_transform(vb, mib));
                     resp[type][name] = arr;
                 }
                 resolve( resp );
@@ -270,11 +244,11 @@ async function get_bulk(target, comm, options, oids, nonrep, maxrep) {
         } );
     } );
 }
-
+*/
 module.exports = {
     get_table,
     get_oids,
     get_all,
-    read_config,
-    get_bulk
+    read_config
+    //,get_bulk
 };
