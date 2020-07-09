@@ -202,10 +202,10 @@ async function get_all(target, comm, options, oids) {
 }
 
 /* Funcion para obtener datos tipo walk por SNMP
- *  *
+ *  */
 async function get_bulk(target, comm, options, oids, nonrep, maxrep) {
     return new Promise(async (resolve, reject) => {
-        const nonRepeaters = nonrep || 0;
+        const nonRepeaters = 0;
         const maxRepetitions = maxrep || 30;
         let session = snmp.createSession(target, comm, options);
         let _oids = Object.keys(oids);
@@ -216,19 +216,7 @@ async function get_bulk(target, comm, options, oids, nonrep, maxrep) {
             if (error) {
                 reject(error);
             } else {
-                // step through the non-repeaters which are single varbinds
-                for (let i = 0; i < nonRepeaters; i++) {
-                    let vb = varbinds[i];
-                    if (i >= varbinds.length) break;
-                    if (!snmp.isVarbindError(vb)) {
-                        let mib = oids[_oids[i]];
-                        let type = "tag" in mib && mib.tag ? "tag" : "field";
-                        let name = mib.name;
-                        resp[type][name] = await vb_transform(vb, mib);
-                    }
-                }
-                // then step through the repeaters which are varbind arrays
-                for (let i = nonRepeaters; i < varbinds.length; i++) {
+                for (let i = 0; i < varbinds.length; i++) {
                     let mib = oids[_oids[i]];
                     let type = "tag" in mib && mib.tag ? "tag" : "field";
                     let name = mib.name;
@@ -244,11 +232,11 @@ async function get_bulk(target, comm, options, oids, nonrep, maxrep) {
         } );
     } );
 }
-*/
+
 module.exports = {
     get_table,
     get_oids,
     get_all,
     read_config
-    //,get_bulk
+    ,get_bulk
 };
