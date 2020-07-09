@@ -10,5 +10,7 @@ const rl = readline.createInterface({
 });
 
 rl.on( "line", (line) => {
-    console.log(line);
+    setTimeout(() => {
+        console.log(line);
+        }, 1000);
 } );
