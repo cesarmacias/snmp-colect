@@ -23,18 +23,20 @@ function filterOids_get(oids_get, vendorName) {
 }
 
 async function poller_cm(target, obj, conf) {
-    let all = "oids_walk" in conf ? {...conf.oids_get, ...conf.oids_walk} : conf.oids_get;
+    //let all = "oids_walk" in conf ? {...conf.oids_get, ...conf.oids_walk} : conf.oids_get;
     poller
-        .get_bulk( target, conf.community, conf.options, all, Object.keys( conf.oids_get ).length )
-        .then( (data) => {
+        //.get_bulk( target, conf.community, conf.options, all, Object.keys( conf.oids_get ).length )
+        .get_all(target, conf.community, conf.options, conf.oids_get)
+        .then((data) => {
             if ("field" in obj && "field" in data)
                 obj.field = {...obj.field, ...data.field};
             if ("tag" in obj && "tag" in data)
                 obj.tag = {...obj.tag, ...data.tag};
-        } )
-        .catch( () => {
-            if ("tag" in obj) obj.tag.CmSnmpError = true;
-        } )
+        })
+        .catch((error) => {
+            obj.tag = "tag" in obj ? {...obj.tag, "CmSnmpError": true} : {"CmSnmpError": true};
+            console.error(error);
+        })
         .finally( () => {
             console.log( JSON.stringify( obj ) );
         } );
