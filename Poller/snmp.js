@@ -281,7 +281,7 @@ function get_walk(target, comm, options, oids, maxrep) {
             console.log("debug0:" + target + "|" + mib.name);
             let snmpProm = new Promise( (resolve, reject) => {
                 session.subtree( oid, maxRepetitions, async (vbs) => {
-                    console.log("debug1:" + target + "|" + mib.name + "|" + vbs.length());
+                    console.log("debug1:" + target + "|" + mib.name + "|" + vbs.length);
                     for (let vb of vbs) {
                         if (!snmp.isVarbindError( vb )) {
                             console.log("debug2:" + target + "|" + mib.name + "|" + vb.oid);
