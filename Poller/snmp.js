@@ -353,7 +353,7 @@ function get_walk(target, comm, options, oids, maxrep) {
 }
 */
 
-function streePromisified(session, oid, maxRepetitions) {
+function streePromisified(session, oid, maxRepetitions, mib) {
     return new Promise(function (resolve, reject) {
         let response = [];
         session.subtree(oid, maxRepetitions, async (varbinds) => {
@@ -378,7 +378,7 @@ function get_walk(target, comm, options, oids, maxrep) {
                 const mib = oids[oid];
                 const type = "tag" in mib && mib.tag ? "tag" : "field";
                 if (type in resp)
-                    resp[type][mib.name] = await streePromisified(session, oid, maxRepetitions);
+                    resp[type][mib.name] = await streePromisified(session, oid, maxRepetitions, mib);
                 else
                     resp[type] = {};
             }
