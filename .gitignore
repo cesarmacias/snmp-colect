@@ -1,7 +1,6 @@
 # Project exclude paths
 /node_modules/
 /config/
-/test/
 .idea/misc.xml
 .idea/modules.xml
 .idea/snmp-colect.iml
