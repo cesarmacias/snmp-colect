@@ -273,7 +273,7 @@ async function get_walk(target, comm, options, oids, maxrep) {
         let obj = {};
         const session = snmp.createSession( target, comm, options );
         const maxRepetitions = maxrep || 30;
-        for await (const oid of Object.keys( oids )) {
+        for await (let oid of Object.keys( oids )) {
             const mib = oids[oid];
             const type = "tag" in mib && mib.tag ? "tag" : "field";
             let resp = {};
@@ -295,7 +295,9 @@ async function get_walk(target, comm, options, oids, maxrep) {
             } );
             await snmpProm.then( (resp) => {
                 obj = {...obj, ...resp};
-            } );
+            } ).catch( (error) => {
+                console.error(error);
+            });
         }
         session.close();
         resolve( obj );
