@@ -31,7 +31,7 @@ async function poller_cm(target, obj, conf) {
             if ("tag" in obj && "tag" in data)
                 obj.tag = {...obj.tag, ...data.tag};
             if ("oids_walk" in conf) {
-                let data = await poller.get_bulk( target, conf.community, conf.options, conf.oids_walk );
+                let data = await poller.get_walk( target, conf.community, conf.options, conf.oids_walk );
                 if ("field" in obj && "field" in data)
                     obj.field = {...obj.field, ...data.field};
                 if ("tag" in obj && "tag" in data)

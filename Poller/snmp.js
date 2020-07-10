@@ -201,8 +201,37 @@ async function get_all(target, comm, options, oids) {
     } );
 }
 
+/* Funcion para procesar los datos obtenidos de un snmpwalk a un dispositivo, los valores los asocia a "field" o "tag"
+ *  *
+async function feedArrCb(varbinds) {
+    let self = this;
+    for (let i = 0; i < varbinds.length; i++)
+        if (snmp.isVarbindError( varbinds[i] )) {
+            console.error( snmp.varbindError( varbinds[i] ).toString );
+        } else {
+            let index = varbinds[i].oid.substring( self.mib.oid.length + 1 );
+            let value, type;
+            if (varbinds[i].type === snmp.ObjectType.OctetString) {
+                value = "type" in self.mib && self.mib.type === "hex" ? varbinds[i].value.toString( "hex" ) : varbinds[i].value.toString();
+            } else if (varbinds[i].type === snmp.ObjectType.Counter64) {
+                value = 0;
+                for (let x of varbinds[i].value.values()) {
+                    value *= 256;
+                    value += x;
+                }
+            } else value = varbinds[i].value;
+            if ("conversion" in self.mib && self.mib.conversion === "ipv4") value = await addr_convert( value );
+            type = "tag" in self.mib && self.mib.tag ? "tag" : "field";
+            if (!(index in self.resp)) self.resp[index] = {};
+            if (!("tag" in self.resp[index])) self.resp[index].tag = {};
+            if (!("field" in self.resp[index])) self.resp[index].field = {};
+            self.resp[index][type][self.mib.name] = value;
+        }
+}
+*/
+
 /* Funcion para obtener datos tipo walk por SNMP
- *  */
+ *
 async function get_bulk(target, comm, options, oids, nonrep, maxrep) {
     return new Promise(async (resolve, reject) => {
         const nonRepeaters = 0;
@@ -232,11 +261,39 @@ async function get_bulk(target, comm, options, oids, nonrep, maxrep) {
         } );
     } );
 }
+*/
+async function get_walk(target, comm, options, oids, maxrep) {
+    return new Promise( async (resolve, reject) => {
+        let resp = {};
+        const session = snmp.createSession( target, comm, options );
+        const maxRepetitions = maxrep || 30;
+        resp.type = {};
+        resp.field = {};
+        for await (const oid of Object.keys(oids)) {
+            session.subtree( oid, maxRepetitions, async (varbinds) => {
+                for (let i = 0; i < varbinds.length; i++) {
+                    const mib = oids[oid];
+                    let type = "tag" in mib && mib.tag ? "tag" : "field";
+                    for (let vb of varbinds[i])
+                        if (!snmp.isVarbindError( vb )) {
+                            let value = await vb_transform(vb, mib);
+                            resp[type][mib.name] = mib.name in resp[type] ? resp[type][mib.name].concat( [value] ) : [value]
+                        }
+                }
+            }, (error) => {
+                if (error)
+                    console.error( "walk|" + target + "|" + oid + "|" + error.toString() );
+            } );
+        }
+        session.close();
+        resolve( resp );
+    } );
+}
 
 module.exports = {
     get_table,
     get_oids,
     get_all,
-    read_config
-    ,get_bulk
+    read_config,
+    get_walk
 };
