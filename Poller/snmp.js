@@ -1,19 +1,19 @@
 /*jslint node: true */
 'use strict';
 
-const snmp = require("net-snmp");
-const fs = require("fs");
-const async = require("async");
-const addr = require("ip-address");
+const snmp = require( "net-snmp" );
+const fs = require( "fs" );
+const async = require( "async" );
+const addr = require( "ip-address" );
 
 /*
 Funcion para convetir el valor recibido en IPv4
 */
 async function addr_convert(value) {
-    return new Promise((resolve, reject) => {
+    return new Promise( (resolve, reject) => {
         let ipv4;
         if (typeof value === 'string') {
-            ipv4 = new addr.Address4(value);
+            ipv4 = new addr.Address4( value );
             if (ipv4.isValid()) {
                 resolve( ipv4.address );
             } else {
@@ -176,22 +176,22 @@ async function get_oids(target, comm, options, oids) {
 /* Funcion para obtener varios datos por snmpget, desde un array de OIDS
  * * */
 async function get_all(target, comm, options, oids) {
-    return new Promise(async (resolve, reject) => {
-        let session = snmp.createSession(target, comm, options);
-        let _oids = Object.keys(oids);
+    return new Promise( async (resolve, reject) => {
+        let session = snmp.createSession( target, comm, options );
+        let _oids = Object.keys( oids );
         let resp = {};
         resp.tag = {};
         resp.field = {};
-        session.get(_oids, async (error, varbinds) => {
+        session.get( _oids, async (error, varbinds) => {
             if (error) {
-                reject(error);
+                reject( error );
             } else {
                 for (const vb of varbinds) {
-                    if (!(snmp.isVarbindError(vb))) {
+                    if (!(snmp.isVarbindError( vb ))) {
                         let mib = oids[vb.oid];
                         let type = "tag" in mib && mib.tag ? "tag" : "field";
                         let name = mib.name;
-                        resp[type][name] = await vb_transform(vb, mib);
+                        resp[type][name] = await vb_transform( vb, mib );
                     }
                 }
                 resolve( resp );
@@ -269,16 +269,15 @@ async function get_walk(target, comm, options, oids, maxrep) {
         const maxRepetitions = maxrep || 30;
         resp.type = {};
         resp.field = {};
-        for await (const oid of Object.keys(oids)) {
+        for await (const oid of Object.keys( oids )) {
             session.subtree( oid, maxRepetitions, async (varbinds) => {
-                for (let i = 0; i < varbinds.length; i++) {
+                for (let vb of varbinds) {
                     const mib = oids[oid];
                     let type = "tag" in mib && mib.tag ? "tag" : "field";
-                    for (let vb of varbinds[i])
-                        if (!snmp.isVarbindError( vb )) {
-                            let value = await vb_transform(vb, mib);
-                            resp[type][mib.name] = mib.name in resp[type] ? resp[type][mib.name].concat( [value] ) : [value]
-                        }
+                    if (!snmp.isVarbindError( vb )) {
+                        let value = await vb_transform( vb, mib );
+                        resp[type][mib.name] = mib.name in resp[type] ? resp[type][mib.name].concat( [value] ) : [value]
+                    }
                 }
             }, (error) => {
                 if (error)
