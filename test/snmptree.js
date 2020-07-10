@@ -50,7 +50,7 @@ function streePromisified(session, oid, maxRepetitions) {
 
 async function start() {
     try {
-        hosts.forEach((target) => {
+        hosts.forEach(async (target) => {
             console.log("debug0:" + target);
             const session = snmp.createSession(target, options.community, options.snmpOpt);
             for await (const oid of oids) {
