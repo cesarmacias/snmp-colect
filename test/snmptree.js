@@ -41,12 +41,33 @@ function tablePromisified(host, oid, options) {
     });
 }
 
+
+function streePromisified(host, oid, options) {
+    return new Promise(function (resolve, reject) {
+        let resp = [];
+        const session = snmp.createSession(host, options.community, options.snmpOpt);
+        session.subtree(oid, maxRepetitions, (varbinds) => {
+            for (let vb of varbinds) {
+                if (snmp.isVarbindError(vb))
+                    console.error(snmp.varbindError(vb));
+                else
+                    resp.push(vb.value);
+            }
+        }, (error) => {
+            if (error)
+                reject(error.toString());
+            else
+                resolve(resp);
+        });
+    });
+}
+
 async function start() {
     try {
         for (const target of hosts) {
             for await (const oid of oids) {
-                let table = await tablePromisified(target, oid, options);
-                console.log(table);
+                let table = await streePromisified(target, oid, options);
+                console.dir(table);
             }
         }
     } catch (error) {
