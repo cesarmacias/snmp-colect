@@ -46,7 +46,7 @@ function streePromisified(host, oid, options) {
     return new Promise(function (resolve, reject) {
         let resp = [];
         const session = snmp.createSession(host, options.community, options.snmpOpt);
-        session.subtree(oid, maxRepetitions, (varbinds) => {
+        session.subtree(oid, options.maxRepetitions, (varbinds) => {
             for (let vb of varbinds) {
                 if (snmp.isVarbindError(vb))
                     console.error(snmp.varbindError(vb));
