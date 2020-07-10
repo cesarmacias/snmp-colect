@@ -289,13 +289,13 @@ async function get_walk(target, comm, options, oids, maxrep) {
                     }
                 }
             }, (error) => {
-                console.log("debug3:" + target + "|" + mib.name);
-                return resp;
+                console.log("debug3:" + target + "|" + mib.name + "|cb" );
+                resolve(resp);
             } );
         } );
         await Promise.all( func ).then( (values) => {
             console.log("debug4:" + target);
-
+            session.close();
             resolve( values );
         } ).catch( (error) => {
             reject( error )
