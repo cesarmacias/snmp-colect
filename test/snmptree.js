@@ -44,7 +44,7 @@ function tablePromisified(host, oid, options) {
 async function start() {
     try {
         for (const target of hosts) {
-            for await (oid of oids) {
+            for await (const oid of oids) {
                 let table = await tablePromisified(target, oid, options);
                 console.log(table);
             }
