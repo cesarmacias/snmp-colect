@@ -18,6 +18,8 @@ const hosts = [
     "10.36.143.179",
     "10.36.224.168",
     "10.36.135.64",
+    "10.36.136.96",
+    "172.20.17.64",
     "10.36.213.51",
     "10.36.197.98",
     "10.36.168.94"
@@ -40,7 +42,7 @@ function streePromisified(session, oid, maxRepetitions) {
             }
         }, (error) => {
             if (error)
-                reject(error.toString());
+                console.error(error.toString());
             else
                 resolve(resp);
         });
