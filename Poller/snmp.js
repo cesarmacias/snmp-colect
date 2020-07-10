@@ -279,20 +279,23 @@ async function get_walk(target, comm, options, oids, maxrep) {
             resp[type] = {}
             console.log("debug0:" + target + "|" + mib.name);
             session.subtree( oid, maxRepetitions, async (vbs) => {
+                console.log("debug1:" + target + "|" + mib.name + "|" + vbs.length);
                 for await (let vb of vbs) {
                     if (!snmp.isVarbindError( vb )) {
                         let value = await vb_transform( vb, mib );
                         resp[type][mib.name] = mib.name in resp[type] ? resp[type][mib.name].concat( [value] ) : [value]
-                        console.log("debug1:" + target + "|" + mib.name + "|" + value);
+                        console.log("debug2:" + target + "|" + mib.name + "|" + value);
 
                     }
                 }
             }, (error) => {
-                console.log("debug2:" + target + "|" + mib.name);
+                console.log("debug3:" + target + "|" + mib.name);
                 return resp;
             } );
         } );
-        Promise.all( func ).then( (values) => {
+        await Promise.all( func ).then( (values) => {
+            console.log("debug4:" + target);
+
             resolve( values );
         } ).catch( (error) => {
             reject( error )
