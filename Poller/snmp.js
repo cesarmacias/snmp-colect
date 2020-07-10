@@ -278,29 +278,32 @@ function get_walk(target, comm, options, oids, maxrep) {
             const type = "tag" in mib && mib.tag ? "tag" : "field";
             let resp = {};
             resp[type] = {}
-            console.log("debug0:" + target + "|" + mib.name);
+            console.log( "debug0:" + target + "|" + mib.name );
             let snmpProm = new Promise( (resolve, reject) => {
                 session.subtree( oid, maxRepetitions, async (vbs) => {
-                    console.log("debug1:" + target + "|" + mib.name + "|" + vbs.length);
+                    console.log( "debug1:" + target + "|" + mib.name + "|" + vbs.length );
                     for (let vb of vbs) {
                         if (!snmp.isVarbindError( vb )) {
-                            console.log("debug2:" + target + "|" + mib.name + "|" + vb.oid);
+                            console.log( "debug2:" + target + "|" + mib.name + "|" + vb.oid );
                             let value = await vb_transform( vb, mib );
                             resp[type][mib.name] = mib.name in resp[type] ? resp[type][mib.name].concat( [value] ) : [value]
                         }
                     }
                 }, (error) => {
                     if (error)
-                        reject( "walk|" + target + "|" + oid + "|" + error.toString() );
-                    else
+                        //reject( "walk|" + target + "|" + oid + "|" + error.toString() );
+                        reject( error );
+                    else {
+                        console.dir( `debug3:${target}|${mib.name}|${resp}` );
                         resolve( resp );
+                    }
                 } );
             } );
             await snmpProm.then( (resp) => {
                 obj = {...obj, ...resp};
             } ).catch( (error) => {
-                console.error(error);
-            });
+                console.error( error );
+            } );
         }
         session.close();
         resolve( obj );
