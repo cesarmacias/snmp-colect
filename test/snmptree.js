@@ -43,8 +43,7 @@ function streePromisified(session, oid, maxRepetitions) {
         }, (error) => {
             if (error)
                 console.error(error.toString());
-            else
-                resolve(resp);
+            resolve(resp);
         });
     });
 }
