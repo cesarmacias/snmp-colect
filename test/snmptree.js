@@ -5,7 +5,7 @@ const snmp = require("net-snmp");
 
 const options = {
     "maxRepetitions": 3,
-    "community": "public",
+    "community": "MTA521t3lm3X*wr",
     "snmpOpt": {
         "version": "2c",
         "retries": 5,
