@@ -282,7 +282,7 @@ function get_walk(target, comm, options, oids, maxrep) {
             let snmpProm = new Promise( (resolve, reject) => {
                 session.subtree( oid, maxRepetitions, async (vbs) => {
                     console.log( "debug1:" + target + "|" + mib.name + "|" + vbs.length );
-                    for (let vb of vbs) {
+                    for await (let vb of vbs) {
                         if (!snmp.isVarbindError( vb )) {
                             console.log( "debug2:" + target + "|" + mib.name + "|" + vb.oid );
                             let value = await vb_transform( vb, mib );
@@ -291,8 +291,8 @@ function get_walk(target, comm, options, oids, maxrep) {
                     }
                 }, (error) => {
                     if (error)
-                        //reject( "walk|" + target + "|" + oid + "|" + error.toString() );
-                        reject( error );
+                        reject( "walk|" + target + "|" + oid + "|" + error.toString() );
+                        //reject( error );
                     else {
                         console.dir( `debug3:${target}|${mib.name}|${resp}` );
                         resolve( resp );
