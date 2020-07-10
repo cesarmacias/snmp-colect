@@ -267,51 +267,81 @@ function subtreePro (session, oid, maxRepetitions ) {
         session.subtree( oid, maxRepetitions, (vb) => {}
     }));
 }*/
+async function get_walk(target, comm, options, oids, maxrep) {
+    return new Promise( async (resolve, reject) => {
+        let obj = {};
+        const session = snmp.createSession( target, comm, options );
+        const maxRepetitions = maxrep || 30;
+        let func = Object.keys( oids ).map( async (oid) => {
+            const mib = oids[oid];
+            const type = "tag" in mib && mib.tag ? "tag" : "field";
+            let resp = {};
+            resp[type] = {}
+            session.subtree( oid, maxRepetitions, async (vbs) => {
+                for await (let vb of vbs) {
+                    if (!snmp.isVarbindError( vb )) {
+                        let value = await vb_transform( vb, mib );
+                        resp[type][mib.name] = mib.name in resp[type] ? resp[type][mib.name].concat( [value] ) : [value]
+                    }
+                }
+            }, (error) => {
+                return resp;
+            } );
+        } );
+        Promise.all( func ).then( (values) => {
+            resolve( values );
+        } ).catch( (error) => {
+            reject( error )
+        } );
+    } );
+}
 
+/*
 function get_walk(target, comm, options, oids, maxrep) {
     return new Promise( async (resolve, reject) => {
         let obj = {};
         const session = snmp.createSession( target, comm, options );
         const maxRepetitions = maxrep || 30;
         for await (let oid of Object.keys( oids )) {
-            const mib = oids[oid];
-            const type = "tag" in mib && mib.tag ? "tag" : "field";
-            let resp = {};
-            resp[type] = {}
-            console.log( "debug0:" + target + "|" + mib.name );
-            let snmpProm = new Promise( (resolve, reject) => {
-                session.subtree( oid, maxRepetitions, async (vbs) => {
-                    console.log( "debug1:" + target + "|" + mib.name + "|" + vbs.length );
-                    for await (let vb of vbs) {
-                        if (!snmp.isVarbindError( vb )) {
-                            let value = await vb_transform( vb, mib );
-                            console.log( "debug2:" + target + "|" + mib.name + "|" + value );
+             const mib = oids[oid];
+               const type = "tag" in mib && mib.tag ? "tag" : "field";
+                let resp = {};
+                resp[type] = {}
+                console.log( "debug0:" + target + "|" + mib.name );
+                let snmpProm = new Promise( (resolve, reject) => {
+                    session.subtree( oid, maxRepetitions, async (vbs) => {
+                        console.log( "debug1:" + target + "|" + mib.name + "|" + vbs.length );
+                        for await (let vb of vbs) {
+                            if (!snmp.isVarbindError( vb )) {
+                                let value = await vb_transform( vb, mib );
+                                console.log( "debug2:" + target + "|" + mib.name + "|" + value );
 
-                            resp[type][mib.name] = mib.name in resp[type] ? resp[type][mib.name].concat( [value] ) : [value]
+                                resp[type][mib.name] = mib.name in resp[type] ? resp[type][mib.name].concat( [value] ) : [value]
+                            }
                         }
-                    }
-                }, (error) => {
-                    if (error)
-                        reject( "walk|" + target + "|" + oid + "|" + error.toString() );
-                        //reject( error );
-                    else {
-                        console.dir( `debug3:${target}|${mib.name}|${resp}` );
-                        resolve( resp );
-                    }
+                    }, (error) => {
+                        if (error)
+                            reject( "walk|" + target + "|" + oid + "|" + error.toString() );
+                            //reject( error );
+                        else {
+                            console.dir( `debug3:${target}|${mib.name}|${resp}` );
+                            resolve( resp );
+                        }
+                    } );
+                    console.log("debug4:" + target + "|" + mib.name);
                 } );
-                console.log("debug4:" + target + "|" + mib.name);
-            } );
-            await snmpProm.then( (resp) => {
-                obj = {...obj, ...resp};
-            } ).catch( (error) => {
-                console.error( error );
-            } );
-        }
-        session.close();
-        resolve( obj );
+                await snmpProm.then( (resp) => {
+                    obj = {...obj, ...resp};
+                } ).catch( (error) => {
+                    console.error( error );
+                } );
+            }
+            session.close();
+            console.log( "debug0:" + target + "|" + mib.name );
+
     } );
 }
-
+*/
 module.exports = {
     get_table,
     get_oids,
