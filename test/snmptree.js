@@ -52,12 +52,13 @@ function streePromisified(session, oid, maxRepetitions) {
 async function start() {
     try {
         for (const target of hosts) {
-            console.log("debug:" + target);
+            console.log("debug0:" + target);
             const session = snmp.createSession(target, options.community, options.snmpOpt);
             for await (const oid of oids) {
                 let table = await streePromisified(session, oid, options.maxRepetitions);
                 console.dir(table);
             }
+            console.log("debug1:" + target);
             session.close();
         }
     } catch (error) {
