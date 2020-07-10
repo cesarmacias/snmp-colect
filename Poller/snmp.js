@@ -275,7 +275,9 @@ async function get_walk(target, comm, options, oids, maxrep) {
         const maxRepetitions = maxrep || 30;
         for await (const oid of Object.keys( oids )) {
             const mib = oids[oid];
-            let resp = "tag" in mib && mib.tag ? {"tag": {}} : {"field": {}}
+            const type = "tag" in mib && mib.tag ? "tag" : "field";
+            let resp = {};
+            resp[type] = {}
             let snmpProm = new Promise( (resolve, reject) => {
                 session.subtree( oid, maxRepetitions, async (varbinds) => {
                     for (let vb of varbinds) {
