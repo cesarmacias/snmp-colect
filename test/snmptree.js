@@ -52,6 +52,7 @@ function streePromisified(session, oid, maxRepetitions) {
 async function start() {
     try {
         for (const target of hosts) {
+            console.log("debug:" + target);
             const session = snmp.createSession(target, options.community, options.snmpOpt);
             for await (const oid of oids) {
                 let table = await streePromisified(session, oid, options.maxRepetitions);
@@ -60,7 +61,7 @@ async function start() {
             session.close();
         }
     } catch (error) {
-        console.log(error);
+        console.error(error.toString());
     }
 }
 
