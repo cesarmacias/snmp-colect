@@ -7,7 +7,7 @@ const options = {
     "maxRepetitions": 3,
     "community": "MTA521t3lm3X*wr",
     "snmpOpt": {
-        "version": "2c",
+        "version": snmp.Version2c,
         "retries": 5,
         "timeout": 1000,
         "port": 161
