@@ -290,7 +290,7 @@ async function get_walk(target, comm, options, oids, maxrep) {
                 }
             }, (error) => {
                 console.log("debug3:" + target + "|" + mib.name + "|cb" );
-                resolve(resp);
+                return resp;
             } );
         } );
         await Promise.all( func ).then( (values) => {
