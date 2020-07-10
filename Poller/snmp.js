@@ -261,31 +261,42 @@ async function get_bulk(target, comm, options, oids, nonrep, maxrep) {
         } );
     } );
 }
-*/
+
+function subtreePro (session, oid, maxRepetitions ) {
+    return new Promise( ((resolve, reject) => {
+        session.subtree( oid, maxRepetitions, (vb) => {}
+    }));
+}*/
+
 async function get_walk(target, comm, options, oids, maxrep) {
     return new Promise( async (resolve, reject) => {
-        let resp = {};
+        let obj = {};
         const session = snmp.createSession( target, comm, options );
         const maxRepetitions = maxrep || 30;
-        resp.type = {};
-        resp.field = {};
         for await (const oid of Object.keys( oids )) {
-            session.subtree( oid, maxRepetitions, async (varbinds) => {
-                for (let vb of varbinds) {
-                    const mib = oids[oid];
-                    let type = "tag" in mib && mib.tag ? "tag" : "field";
-                    if (!snmp.isVarbindError( vb )) {
-                        let value = await vb_transform( vb, mib );
-                        resp[type][mib.name] = mib.name in resp[type] ? resp[type][mib.name].concat( [value] ) : [value]
+            const mib = oids[oid];
+            let resp = "tag" in mib && mib.tag ? {"tag": {}} : {"field": {}}
+            let snmpProm = new Promise( (resolve, reject) => {
+                session.subtree( oid, maxRepetitions, async (varbinds) => {
+                    for (let vb of varbinds) {
+                        if (!snmp.isVarbindError( vb )) {
+                            let value = await vb_transform( vb, mib );
+                            resp[type][mib.name] = mib.name in resp[type] ? resp[type][mib.name].concat( [value] ) : [value]
+                        }
                     }
-                }
-            }, (error) => {
-                if (error)
-                    console.error( "walk|" + target + "|" + oid + "|" + error.toString() );
+                }, (error) => {
+                    if (error)
+                        reject( "walk|" + target + "|" + oid + "|" + error.toString() );
+                    else
+                        resolve( resp );
+                } );
+            } );
+            await snmpProm.then( (resp) => {
+                obj = {...obj, ...resp};
             } );
         }
         session.close();
-        resolve( resp );
+        resolve( obj );
     } );
 }
 
