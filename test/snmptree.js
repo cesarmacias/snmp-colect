@@ -38,7 +38,7 @@ function tablePromisified(host, oid, options) {
                 resolve(table);
             }
         });
-    ]);
+    });
 }
 
 async function start() {
