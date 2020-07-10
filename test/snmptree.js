@@ -28,25 +28,10 @@ const oids = [
     "1.3.6.1.4.1.4115.1.20.1.1.3.42.1.6"
 ];
 
-function tablePromisified(host, oid, options) {
-    return new Promise(function (resolve, reject) {
-        const session = snmp.createSession(host, options.community, options.snmpOpt);
-        session.table(oid, options.maxRepetitions, function (error, table) {
-            if (error) {
-                reject(error.toString());
-            } else {
-                resolve(table);
-            }
-        });
-    });
-}
-
-
-function streePromisified(host, oid, options) {
+function streePromisified(session, oid, maxRepetitions) {
     return new Promise(function (resolve, reject) {
         let resp = [];
-        const session = snmp.createSession(host, options.community, options.snmpOpt);
-        session.subtree(oid, options.maxRepetitions, (varbinds) => {
+        session.subtree(oid, maxRepetitions, (varbinds) => {
             for (let vb of varbinds) {
                 if (snmp.isVarbindError(vb))
                     console.error(snmp.varbindError(vb));
@@ -65,10 +50,12 @@ function streePromisified(host, oid, options) {
 async function start() {
     try {
         for (const target of hosts) {
+            const session = snmp.createSession(target, options.community, options.snmpOpt);
             for await (const oid of oids) {
-                let table = await streePromisified(target, oid, options);
+                let table = await streePromisified(session, oid, options.maxRepetitions);
                 console.dir(table);
             }
+            session.close();
         }
     } catch (error) {
         console.log(error);
