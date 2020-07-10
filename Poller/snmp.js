@@ -284,8 +284,9 @@ function get_walk(target, comm, options, oids, maxrep) {
                     console.log( "debug1:" + target + "|" + mib.name + "|" + vbs.length );
                     for await (let vb of vbs) {
                         if (!snmp.isVarbindError( vb )) {
-                            console.log( "debug2:" + target + "|" + mib.name + "|" + vb.oid );
                             let value = await vb_transform( vb, mib );
+                            console.log( "debug2:" + target + "|" + mib.name + "|" + value );
+
                             resp[type][mib.name] = mib.name in resp[type] ? resp[type][mib.name].concat( [value] ) : [value]
                         }
                     }
@@ -298,6 +299,7 @@ function get_walk(target, comm, options, oids, maxrep) {
                         resolve( resp );
                     }
                 } );
+                console.log("debug4:" + target + "|" + mib.name);
             } );
             await snmpProm.then( (resp) => {
                 obj = {...obj, ...resp};
