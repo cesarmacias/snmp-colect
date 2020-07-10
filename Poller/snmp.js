@@ -268,7 +268,7 @@ function subtreePro (session, oid, maxRepetitions ) {
     }));
 }*/
 
-async function get_walk(target, comm, options, oids, maxrep) {
+function get_walk(target, comm, options, oids, maxrep) {
     return new Promise( async (resolve, reject) => {
         let obj = {};
         const session = snmp.createSession( target, comm, options );
@@ -278,10 +278,12 @@ async function get_walk(target, comm, options, oids, maxrep) {
             const type = "tag" in mib && mib.tag ? "tag" : "field";
             let resp = {};
             resp[type] = {}
+            console.log("debug0:" + target + "|" + mib.name);
             let snmpProm = new Promise( (resolve, reject) => {
-                session.subtree( oid, maxRepetitions, async (varbinds) => {
-                    for (let vb of varbinds) {
+                session.subtree( oid, maxRepetitions, async (vbs) => {
+                    for (let vb of vbs) {
                         if (!snmp.isVarbindError( vb )) {
+                            console.log("debug1:" + target + "|" + mib.name + "|" + vb.oid);
                             let value = await vb_transform( vb, mib );
                             resp[type][mib.name] = mib.name in resp[type] ? resp[type][mib.name].concat( [value] ) : [value]
                         }
