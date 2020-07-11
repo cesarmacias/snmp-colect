@@ -7,11 +7,11 @@ const snmp = require("net-snmp");
 
 
 const conf = {
-    "maxRepetitions": 3,
+    "maxRepetitions": 5,
     "community": "MTA521t3lm3X*wr",
     "options": {
         "version": snmp.Version2c,
-        "retries": 5,
+        "retries": 2,
         "timeout": 1000,
         "port": 161
     }
@@ -1029,7 +1029,6 @@ const oids = {
 function start() {
     try {
         hosts.forEach(async (target) => {
-            //console.log("debug0:" + target);
             let obj = {"tag": {"host": target}, "field": {}};
             let data = await poller.get_walk(target, conf.community, conf.options, oids, conf.maxRepetitions);
             obj.field = {...obj.field, ...data.field};
