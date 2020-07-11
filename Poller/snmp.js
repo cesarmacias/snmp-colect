@@ -362,8 +362,7 @@ function streePromisified(session, oid, maxRepetitions, mib) {
                     response.push(await vb_transform(vb, mib));
         }, (error) => {
             if (error) {
-                console.error(session);
-                console.error(error.toString());
+                console.error(`walk:${session.target}|${error.toString()}`);
             }
             resolve(response);
         });
