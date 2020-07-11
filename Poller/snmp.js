@@ -210,7 +210,7 @@ function streePromisified(session, oid, maxRepetitions, mib, maxIterations) {
         let i = 0;
         let response = [];
         session.subtree(oid, maxRepetitions, async (varbinds) => {
-            if (maxIte && i++ > maxIterations) {
+            if (maxIterations && i++ > maxIterations) {
                 response = [];
                 throw new Error("maxIterations reached");
             }
