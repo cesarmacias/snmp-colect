@@ -25,10 +25,10 @@ const oids = {
     "1.3.6.1.4.1.4115.1.20.1.1.3.42.1.6": {"name": "mac", "type": "hex"}
 };
 
-async function process_target(target) {
+async function process_target(target, comm, opt, oids, masrep, maxite) {
     try {
         let obj = {"tag": {"host": target}, "field": {}};
-        let data = poller.get_walk(target, conf.community, conf.options, oids, conf.maxRepetitions, conf.maxIterations);
+        let data = poller.get_walk(target, comm, opt, oids, masrep, maxite);
         obj.field = {...obj.field, ...data.field};
         obj.tag = {...obj.tag, ...data.tag};
         console.log(JSON.stringify(obj));
@@ -44,7 +44,7 @@ function start() {
         terminal: false,
     });
     rl.on("line", (target) => {
-        process_target(target);
+        process_target(target, conf.community, conf.options, oids, conf.maxRepetitions, conf.maxIterations);
     });
 }
 
