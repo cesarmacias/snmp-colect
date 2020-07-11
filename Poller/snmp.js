@@ -361,13 +361,16 @@ function streePromisified(session, oid, maxRepetitions, mib) {
                 if (!snmp.isVarbindError(vb))
                     response.push(await vb_transform(vb, mib));
         }, (error) => {
-            if (error)
+            if (error) {
+                console.error(session);
                 console.error(error.toString());
+            }
             resolve(response);
         });
     });
 }
 
+/*
 function get_walk(target, comm, options, oids, maxrep) {
     return new Promise(async (resolve, reject) => {
         try {
@@ -389,6 +392,27 @@ function get_walk(target, comm, options, oids, maxrep) {
             console.error(error.toString());
         }
     });
+}*/
+
+async function get_walk(target, comm, options, oids, maxrep) {
+    try {
+        const session = snmp.createSession(target, comm, options);
+        const maxRepetitions = maxrep || 30;
+        let resp = {};
+        resp.tag = {};
+        resp.field = {};
+        for await (const oid of Object.keys(oids)) {
+            let mib = oids[oid];
+            let type = "tag" in mib && mib.tag ? "tag" : "field";
+            let value = await streePromisified(session, oid, maxRepetitions, mib);
+            if (value && value.length > 0)
+                resp[type][mib.name] = value;
+        }
+        session.close();
+        return resp;
+    } catch (error) {
+        console.error(error.toString());
+    }
 }
 
 module.exports = {
