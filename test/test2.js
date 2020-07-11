@@ -1029,9 +1029,12 @@ const oids = {
 function start() {
     try {
         hosts.forEach(async (target) => {
-            console.log("debug0:" + target);
+            //console.log("debug0:" + target);
+            let obj = {"tag": {"host": target}, "field": {}};
             let data = await poller.get_walk(target, conf.community, conf.options, oids, conf.maxRepetitions);
-            console.dir(data);
+            obj.field = {...obj.field, ...data.field};
+            obj.tag = {...obj.tag, ...data.tag};
+            console.dir(obj);
         });
     } catch (error) {
         console.error(error.toString());
