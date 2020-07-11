@@ -2,7 +2,7 @@
   "name": "snmp-colect",
   "version": "1.0.0",
   "description": "Colect SNMP data from any devices with OID in json config file",
-  "main": "index.js",
+  "main": "Poller/poller.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
