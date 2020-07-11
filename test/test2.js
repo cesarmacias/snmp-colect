@@ -1,10 +1,10 @@
 /*jslint node: true */
 "use strict";
 
-import * as events from "events";
-import * as readline from "readline";
-import * as poller from "../Poller/snmp.js";
-import * as snmp from "net-snmp";
+const readline = require("readline");
+const poller = require("../Poller/snmp.js");
+const events = require("events");
+const snmp = require("net-snmp");
 
 const conf = {
     "maxRepetitions": 10,
