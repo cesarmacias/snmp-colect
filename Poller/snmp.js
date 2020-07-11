@@ -212,7 +212,8 @@ function streePromisified(session, oid, maxRepetitions, mib, maxIterations) {
         session.subtree(oid, maxRepetitions, async (varbinds) => {
             if (maxIterations && i++ > maxIterations) {
                 response = [];
-                return new Error("maxIterations reached " + i);
+                this.doneCb(new Error("maxIterations reached"));
+                return new Error("maxIterations reached");
             }
             for (let vb of varbinds)
                 if (!snmp.isVarbindError(vb))
