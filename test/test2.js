@@ -7,13 +7,16 @@ const snmp = require("net-snmp");
 
 
 const conf = {
-    "maxRepetitions": 5,
-    "community": "MTA521t3lm3X*wr",
+    "maxRepetitions": 10,
+    "community": "public",
+    "maxIterations": 5,
     "options": {
         "version": snmp.Version2c,
         "retries": 2,
         "timeout": 1000,
-        "port": 161
+        "port": 161,
+        "backoff": 1,
+        "backwardsGetNexts": false,
     }
 };
 

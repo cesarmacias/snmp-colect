@@ -355,8 +355,11 @@ function get_walk(target, comm, options, oids, maxrep) {
 
 function streePromisified(session, oid, maxRepetitions, mib) {
     return new Promise(function (resolve, reject) {
+        let i = 0;
         let response = [];
         session.subtree(oid, maxRepetitions, async (varbinds) => {
+            if (i++ > 5)
+                resolve([]); //detener con un error
             for (let vb of varbinds)
                 if (!snmp.isVarbindError(vb))
                     response.push(await vb_transform(vb, mib));
