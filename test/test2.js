@@ -25,23 +25,18 @@ const oids = {
     "1.3.6.1.4.1.4115.1.20.1.1.3.42.1.6": {"name": "mac", "type": "hex"}
 };
 
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: false,
-});
-
-function start() {
-    try {
-        rl.on("line", async (target) => {
-            let obj = {"tag": {"host": target}, "field": {}};
-            let data = await poller.get_walk(target, conf.community, conf.options, oids, conf.maxRepetitions, conf.maxIterations);
-            obj.field = {...obj.field, ...data.field};
-            obj.tag = {...obj.tag, ...data.tag};
-            console.log(JSON.stringify(obj));
-        });
-    } catch (error) {
-        console.error(error.toString());
+async function start() {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        terminal: false,
+    });
+    for await (const target of rl) {
+        let obj = {"tag": {"host": target}, "field": {}};
+        let data = await poller.get_walk(target, conf.community, conf.options, oids, conf.maxRepetitions, conf.maxIterations);
+        obj.field = {...obj.field, ...data.field};
+        obj.tag = {...obj.tag, ...data.tag};
+        console.log(JSON.stringify(obj));
     }
 }
 
