@@ -3,6 +3,8 @@
 
 const readline = require("readline");
 const poller = require("../Poller/snmp.js");
+const snmp = require("net-snmp");
+
 
 const conf = {
     "maxRepetitions": 3,
