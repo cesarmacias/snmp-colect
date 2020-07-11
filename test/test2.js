@@ -1,11 +1,10 @@
 /*jslint node: true */
 "use strict";
 
-const readline = require("readline");
-const poller = require("../Poller/snmp.js");
-const snmp = require("net-snmp");
-const {once} = require('events');
-
+import * as events from "events";
+import * as readline from "readline";
+import * as poller from "../Poller/snmp.js";
+import * as snmp from "net-snmp";
 
 const conf = {
     "maxRepetitions": 10,
@@ -49,7 +48,7 @@ async function start() {
         cnt++;
         process_target(target, conf.community, conf.options, oids, conf.maxRepetitions, conf.maxIterations);
     });
-    await once(rl, 'close');
+    await events.once(rl, 'close');
     console.error("lines: " + cnt);
 }
 
