@@ -241,11 +241,10 @@ async function get_walk(target, comm, options, oids, maxrep, maxIterations) {
         for await (const oid of Object.keys(oids)) {
             let mib = oids[oid];
             let type = "tag" in mib && mib.tag ? "tag" : "field";
-            let value = await streePromisified(session, oid, maxRepetitions, mib, maxIterations).catch((error)
-            {
-                console.error("inside");
-            }
-        )
+            let value = await streePromisified(session, oid, maxRepetitions, mib, maxIterations).catch(error => {
+                    console.error("inside" + error.toString());
+                }
+            );
             ;
             if (value && value.length > 0)
                 resp[type][mib.name] = value;
