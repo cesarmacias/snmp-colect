@@ -211,16 +211,17 @@ function streePromisified(session, oid, maxRepetitions, mib, maxIterations) {
         let response = [];
         session.subtree(oid, maxRepetitions, async (varbinds) => {
             if (maxIterations && i++ > maxIterations) {
-                response = [];
-                this.doneCb(new Error("maxIterations reached"));
-                return new Error("maxIterations reached");
+                /*response = [];
+                return new Error("maxIterations reached");*/
+                reject("maxIterations reached");
             }
             for (let vb of varbinds)
                 if (!snmp.isVarbindError(vb))
                     response.push(await vb_transform(vb, mib));
         }, (error) => {
             if (error) {
-                console.error(`walk:${session.target}|${error.toString()}`);
+                //console.error(`walk:${session.target}|${error.toString()}`);
+                reject(error.toString());
             }
             resolve(response);
         });
@@ -240,7 +241,12 @@ async function get_walk(target, comm, options, oids, maxrep, maxIterations) {
         for await (const oid of Object.keys(oids)) {
             let mib = oids[oid];
             let type = "tag" in mib && mib.tag ? "tag" : "field";
-            let value = await streePromisified(session, oid, maxRepetitions, mib, maxIterations);
+            let value = await streePromisified(session, oid, maxRepetitions, mib, maxIterations).catch((error)
+            {
+                console.error("inside");
+            }
+        )
+            ;
             if (value && value.length > 0)
                 resp[type][mib.name] = value;
         }
