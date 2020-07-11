@@ -4,6 +4,7 @@
 const readline = require("readline");
 const poller = require("../Poller/snmp.js");
 const snmp = require("net-snmp");
+const {once} = require('events');
 
 
 const conf = {
@@ -37,15 +38,19 @@ async function process_target(target, comm, opt, oids, masrep, maxite) {
     }
 }
 
-function start() {
+async function start() {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
         terminal: false,
     });
+    let cnt = 0;
     rl.on("line", (target) => {
+        cnt++;
         process_target(target, conf.community, conf.options, oids, conf.maxRepetitions, conf.maxIterations);
     });
+    await once(rl, 'close');
+    console.error("lines: " + cnt);
 }
 
 start();
