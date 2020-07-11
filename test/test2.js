@@ -1032,7 +1032,6 @@ function start() {
             console.log("debug0:" + target);
             let data = await poller.get_walk(target, conf.community, conf.options, oids, conf.maxRepetitions);
             console.dir(data);
-            session.close();
         });
     } catch (error) {
         console.error(error.toString());

@@ -374,13 +374,14 @@ function get_walk(target, comm, options, oids, maxrep) {
             const session = snmp.createSession(target, comm, options);
             const maxRepetitions = maxrep || 30;
             let resp = {};
+            resp.tag = {};
+            resp.field = {};
             for await (const oid of Object.keys(oids)) {
-                const mib = oids[oid];
-                const type = "tag" in mib && mib.tag ? "tag" : "field";
-                if (type in resp)
-                    resp[type][mib.name] = await streePromisified(session, oid, maxRepetitions, mib);
-                else
-                    resp[type] = {};
+                let mib = oids[oid];
+                let type = "tag" in mib && mib.tag ? "tag" : "field";
+                let value = await streePromisified(session, oid, maxRepetitions, mib);
+                if (value && value.length > 0)
+                    resp[type][mib.name] = value;
             }
             session.close();
             resolve(resp);
