@@ -28,7 +28,7 @@ const oids = {
 async function process_target(target, comm, opt, oids, masrep, maxite) {
     try {
         let obj = {"tag": {"host": target}, "field": {}};
-        let data = poller.get_walk(target, comm, opt, oids, masrep, maxite);
+        let data = await poller.get_walk(target, comm, opt, oids, masrep, maxite);
         obj.field = {...obj.field, ...data.field};
         obj.tag = {...obj.tag, ...data.tag};
         console.log(JSON.stringify(obj));
