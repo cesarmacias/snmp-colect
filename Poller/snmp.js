@@ -239,8 +239,8 @@ async function get_walk(target, comm, options, oids, maxrep, maxIterations) {
             let type = "tag" in mib && mib.tag ? "tag" : "field";
             let value = await streePromisified(session, oid, maxRepetitions, mib, maxIterations).catch((error) => {
                     //console.error(`${target}|${oids[oid].name}|${error.toString()}`);
-                    value = {"tag": {"error": {}}};
-                    value.tag.error[oids[oid].name] = error.toString();
+                    resp.tag.error = {};
+                    resp.tag.error[oids[oid].name] = error.toString();
                 }
             );
             if (value && value.length > 0)
