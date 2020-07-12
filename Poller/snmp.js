@@ -216,10 +216,10 @@ function streePromisified(session, oid, maxRepetitions, mib, maxIterations) {
                 if (!snmp.isVarbindError(vb))
                     response.push(await vb_transform(vb, mib));
         }, (error) => {
-            if (error) {
+            if (error)
                 reject(error);
-            }
-            resolve(response);
+            else
+                resolve(response);
         });
     });
 }
@@ -239,10 +239,7 @@ async function get_walk(target, comm, options, oids, maxrep, maxIterations) {
             try {
                 let mib = oids[oid];
                 let type = "tag" in mib && mib.tag ? "tag" : "field";
-                let value = await streePromisified(session, oid, maxRepetitions, mib, maxIterations);
-                resp.tag.inside = true;
-                if (value && value.length > 0)
-                    resp[type][mib.name] = value;
+                resp[type][mib.name] = await streePromisified(session, oid, maxRepetitions, mib, maxIterations);
             } catch (error) {
                 if ("error" in resp.tag)
                     resp.tag.error[oids[oid].name] = error.toString();
