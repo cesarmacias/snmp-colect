@@ -234,7 +234,6 @@ async function get_walk(target, comm, options, oids, maxrep, maxIterations) {
         let resp = {};
         resp.tag = {};
         resp.field = {};
-
         for await (const oid of Object.keys(oids)) {
             try {
                 let mib = oids[oid];

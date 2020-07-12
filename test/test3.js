@@ -9,7 +9,7 @@ const throat = require('throat');
 
 const conf = {
     "maxRepetitions": 10,
-    "community": "MTA521t3lm3X*wr",
+    "community": "public",
     "maxIterations": 5,
     "options": {
         "version": snmp.Version2c,

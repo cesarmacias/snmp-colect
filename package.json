@@ -1,6 +1,6 @@
 {
   "name": "snmp-colect",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Colect SNMP data from any devices with OID in json config file",
   "main": "Poller/poller.js",
   "scripts": {
@@ -11,7 +11,6 @@
   "license": "ISC",
   "dependencies": {
     "async": "^3.2.0",
-    "events": "^3.1.0",
     "fs": "0.0.1-security",
     "ip-address": "^6.3.0",
     "minimist": "^1.2.5",
