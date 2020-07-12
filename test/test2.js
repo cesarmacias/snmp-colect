@@ -26,6 +26,7 @@ const oids = {
 };
 
 let stop = 0;
+const ee = new events.EventEmitter();
 
 async function process_target(target, comm, opt, oids, masrep, maxite) {
     try {
@@ -33,8 +34,9 @@ async function process_target(target, comm, opt, oids, masrep, maxite) {
         let data = await poller.get_walk(target, comm, opt, oids, masrep, maxite);
         obj.field = {...obj.field, ...data.field};
         obj.tag = {...obj.tag, ...data.tag};
-        stop++;
         console.log(JSON.stringify(obj));
+        if (stop++ >= cnt)
+            ee.emit('stop', stop);
     } catch (error) {
         console.error(error.toString());
     }
@@ -53,16 +55,7 @@ async function start() {
         process_target(target, conf.community, conf.options, oids, conf.maxRepetitions, conf.maxIterations);
     });
     await events.once(rl, 'close');
-
-    async function correct_stop() {
-        while (stop < cnt) {
-            await setTimeout(() => {
-            }, 1000);
-        }
-    }
-
-    await correct_stop();
-    //console.error(msg);
+    await events.once(ee, 'stop');
 }
 
 start();
