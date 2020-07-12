@@ -21,7 +21,7 @@ const conf = {
     }
 };
 
-const ConLimit = 500;
+const ConLimit = 100;
 
 const oids = {
     "1.3.6.1.4.1.4115.1.20.1.1.3.42.1.22": {"name": "rssi"},
