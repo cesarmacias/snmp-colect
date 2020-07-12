@@ -25,12 +25,15 @@ const oids = {
     "1.3.6.1.4.1.4115.1.20.1.1.3.42.1.6": {"name": "mac", "type": "hex"}
 };
 
+let stop = 0;
+
 async function process_target(target, comm, opt, oids, masrep, maxite) {
     try {
         let obj = {"tag": {"host": target}, "field": {}};
         let data = await poller.get_walk(target, comm, opt, oids, masrep, maxite);
         obj.field = {...obj.field, ...data.field};
         obj.tag = {...obj.tag, ...data.tag};
+        stop++;
         console.log(JSON.stringify(obj));
     } catch (error) {
         console.error(error.toString());
@@ -44,12 +47,22 @@ async function start() {
         terminal: false,
     });
     let cnt = 0;
+
     rl.on("line", (target) => {
         cnt++;
         process_target(target, conf.community, conf.options, oids, conf.maxRepetitions, conf.maxIterations);
     });
     await events.once(rl, 'close');
-    console.error("lines: " + cnt);
+
+    async function correct_stop() {
+        while (stop < cnt) {
+            await setTimeout(() => {
+            }, 1000);
+        }
+    }
+
+    await correct_stop();
+    //console.error(msg);
 }
 
 start();
