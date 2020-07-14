@@ -202,16 +202,24 @@ async function get_all(target, comm, options, oids) {
 Funcion para que snmp.subtree trabaje con promesas
  */
 
-function streePromisified(session, oid, maxRepetitions, mib, maxIterations) {
+function streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIterations) {
     return new Promise(function (resolve, reject) {
         let i = 0;
-        let response = [];
+        let response;
         session.subtree(oid, maxRepetitions, async (varbinds) => {
             if (maxIterations && i++ > maxIterations)
                 reject("maxIterations reached");
             for (let vb of varbinds)
-                if (!snmp.isVarbindError(vb))
-                    response.push(await vb_transform(vb, mib));
+                if (!snmp.isVarbindError(vb)) {
+                    let value = await vb_transform(vb, mib);
+                    if (TypeResponse === "array")
+                        response.push(value);
+                    else {
+                        let index = vb.oid.substring(oid.length + 1);
+                        response = {...response, [index]: value};
+                    }
+                }
+
         }, (error) => {
             if (error)
                 reject(error);
@@ -224,16 +232,14 @@ function streePromisified(session, oid, maxRepetitions, mib, maxIterations) {
 /*
 Funcion para obtener datos por snmpwalk
  */
-async function get_walk(target, comm, options, oids, maxRepetitions, maxIterations) {
+async function get_walk(target, comm, options, oids, TypeResponse, maxRepetitions, maxIterations) {
     try {
         const session = snmp.createSession(target, comm, options);
         let resp = {};
-        resp.tag = {};
-        resp.field = {};
         for await (const oid of Object.keys(oids)) {
             let mib = oids[oid];
             let type = "tag" in mib && mib.tag ? "tag" : "field";
-            resp[type][mib.name] = await streePromisified(session, oid, maxRepetitions, mib, maxIterations).catch(error => {
+            let value = await streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIterations).catch(error => {
                 if ("CmOidError" in resp.tag)
                     resp.tag.CmOidError[oids[oid].name] = error.toString();
                 else {
@@ -241,6 +247,7 @@ async function get_walk(target, comm, options, oids, maxRepetitions, maxIteratio
                     resp.tag.CmOidError[oids[oid].name] = error.toString();
                 }
             });
+            resp[type] = {...resp[type], ...{[mib.name]: value}};
         }
         session.close();
         return resp;

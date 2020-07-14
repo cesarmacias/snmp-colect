@@ -36,7 +36,7 @@ async function process_target(target, comm, opt, oids, vendorList, mac, maxRepet
         }
         if ("walk" in oids) {
             let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.walk) : oids.walk;
-            walk = await poller.get_walk(target, comm, opt, filterOids, maxRepetitions, maxIterations);
+            walk = await poller.get_walk(target, comm, opt, filterOids, "array", maxRepetitions, maxIterations);
         }
         for (let k of ["tag", "field"]) {
             obj[k] = {...get[k], ...walk[k]};
