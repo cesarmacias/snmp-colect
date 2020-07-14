@@ -120,7 +120,7 @@ async function read_config(file, inh) {
                 else
                     config.options.version = snmp.Version2c;
         if (!("maxRepetitions" in config)) config.maxRepetitions = 20;
-        if (!("limit" in config)) config.limit = 3;
+        if (!("limit" in config)) config.limit = 3; //se debe eliminar esta configuracion
         if (!("time" in config)) config.time = true;
         resolve(config);
     });
