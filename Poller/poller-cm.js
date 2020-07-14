@@ -30,12 +30,12 @@ async function process_target(target, comm, opt, oids, vendorList, mac, maxRepet
         let get = {};
         let walk = {};
         let obj = {};
-        if ("oids_get" in oids) {
-            let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.oids_get) : oids.oids_get;
+        if ("get" in oids) {
+            let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.get) : oids.get;
             get = await poller.get_all(target, comm, opt, filterOids);
         }
-        if ("oids_walk" in oids) {
-            let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.oids_walk) : oids.oids_walk;
+        if ("walk" in oids) {
+            let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.walk) : oids.walk;
             walk = await poller.get_walk(target, comm, opt, filterOids, maxRepetitions, maxIterations);
         }
         for (let k of ["tag", "field"]) {
@@ -68,7 +68,7 @@ async function run(file) {
             terminal: false,
         });
         const oids = {"get": conf.oids_get, "walk": conf.oids_walk};
-        rl.on("line", throat(ConLimit, line => {
+        rl.on("line", throat(ConLimit, async (line) => {
             const obj = JSON.parse(line);
             const target = obj.tag[conf.iterable];
             const MacAddr = obj.tag[conf.filtered];
@@ -76,18 +76,19 @@ async function run(file) {
             if (target && target !== "0.0.0.0") {
                 if (filter) {
                     if (MacAddr && regExp.test(MacAddr)) {
-                        result = process_target(target, conf.community, conf.options, oids, vendorList, MacAddr, conf.maxRepetitions, conf.maxIterations);
+                        result = await process_target(target, conf.community, conf.options, oids, vendorList, MacAddr, conf.maxRepetitions, conf.maxIterations);
                     } else {
                         obj.tag.CmPollerError = true;
                     }
                 } else {
-                    result = process_target(target, conf.community, conf.options, oids, vendorList, MacAddr, conf.maxRepetitions, conf.maxIterations);
+                    result = await process_target(target, conf.community, conf.options, oids, vendorList, MacAddr, conf.maxRepetitions, conf.maxIterations);
                 }
             } else {
                 obj.tag.CmPollerError = true;
             }
             for (let k of ["tag", "field"]) {
-                obj[k] = {...obj[k], ...result[k]};
+                if (result && k in result)
+                    obj[k] = {...obj[k], ...result[k]};
             }
             console.log(JSON.stringify(obj));
         }));
