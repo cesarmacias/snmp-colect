@@ -115,10 +115,7 @@ async function read_config(file, inh) {
         });
         if ("options" in config)
             if ("version" in config.options)
-                if (config.options.version === "1")
-                    config.options.version = snmp.Version1;
-                else
-                    config.options.version = snmp.Version2c;
+                config.options.version = config.options.version === "1" ? snmp.Version1 : snmp.Version2c;
         if (!("maxRepetitions" in config)) config.maxRepetitions = 20;
         if (!("limit" in config)) config.limit = 3; //se debe eliminar esta configuracion
         if (!("time" in config)) config.time = true;
@@ -227,10 +224,9 @@ function streePromisified(session, oid, maxRepetitions, mib, maxIterations) {
 /*
 Funcion para obtener datos por snmpwalk
  */
-async function get_walk(target, comm, options, oids, maxrep, maxIterations) {
+async function get_walk(target, comm, options, oids, maxRepetitions, maxIterations) {
     try {
         const session = snmp.createSession(target, comm, options);
-        const maxRepetitions = maxrep || 30;
         let resp = {};
         resp.tag = {};
         resp.field = {};
