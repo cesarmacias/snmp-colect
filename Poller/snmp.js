@@ -237,10 +237,10 @@ async function get_walk(target, comm, options, oids, maxRepetitions, maxIteratio
                 resp[type][mib.name] = await streePromisified(session, oid, maxRepetitions, mib, maxIterations);
             } catch (error) {
                 if ("error" in resp.tag)
-                    resp.tag.OidError[oids[oid].name] = error.message;
+                    resp.tag.CmOidError[oids[oid].name] = error.message;
                 else {
-                    resp.tag.OidError = {};
-                    resp.tag.OidError[oids[oid].name] = error.message;
+                    resp.tag.CmOidError = {};
+                    resp.tag.CmOidError[oids[oid].name] = error.message;
                 }
             }
         }

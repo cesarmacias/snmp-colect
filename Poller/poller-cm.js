@@ -43,7 +43,7 @@ async function process_target(target, comm, opt, oids, vendorList, mac, maxRepet
         }
         return obj;
     } catch (error) {
-        return {"tag": {"Error": error.message}}
+        return {"tag": {"CmError": error.message}}
     }
 }
 
@@ -78,13 +78,13 @@ async function run(file) {
                     if (MacAddr && regExp.test(MacAddr)) {
                         result = await process_target(target, conf.community, conf.options, oids, vendorList, MacAddr, conf.maxRepetitions, conf.maxIterations);
                     } else {
-                        obj.tag.Error = "Not Cable Modem";
+                        obj.tag.CmError = "Not Cable Modem";
                     }
                 } else {
                     result = await process_target(target, conf.community, conf.options, oids, vendorList, MacAddr, conf.maxRepetitions, conf.maxIterations);
                 }
             } else {
-                obj.tag.Error = "Not IP";
+                obj.tag.CmError = "Not IP";
             }
             for (let k of ["tag", "field"]) {
                 if (result && k in result)
