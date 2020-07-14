@@ -231,18 +231,16 @@ async function get_walk(target, comm, options, oids, maxRepetitions, maxIteratio
         resp.tag = {};
         resp.field = {};
         for await (const oid of Object.keys(oids)) {
-            try {
-                let mib = oids[oid];
-                let type = "tag" in mib && mib.tag ? "tag" : "field";
-                resp[type][mib.name] = await streePromisified(session, oid, maxRepetitions, mib, maxIterations);
-            } catch (error) {
-                if ("error" in resp.tag)
-                    resp.tag.CmOidError[oids[oid].name] = error.message;
+            let mib = oids[oid];
+            let type = "tag" in mib && mib.tag ? "tag" : "field";
+            resp[type][mib.name] = await streePromisified(session, oid, maxRepetitions, mib, maxIterations).catch(error => {
+                if ("CmOidError" in resp.tag)
+                    resp.tag.CmOidError[oids[oid].name] = error.toString();
                 else {
                     resp.tag.CmOidError = {};
-                    resp.tag.CmOidError[oids[oid].name] = error.message;
+                    resp.tag.CmOidError[oids[oid].name] = error.toString();
                 }
-            }
+            });
         }
         session.close();
         return resp;
