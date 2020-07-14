@@ -43,7 +43,8 @@ async function process_target(target, comm, opt, oids, vendorList, mac, maxRepet
         }
         return obj;
     } catch (error) {
-        console.error(error.toString());
+        //console.error(error.toString());
+        return {"tag": {"error": error.toString()}}
     }
 }
 

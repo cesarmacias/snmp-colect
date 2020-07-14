@@ -208,7 +208,7 @@ function streePromisified(session, oid, maxRepetitions, mib, maxIterations) {
         let response = [];
         session.subtree(oid, maxRepetitions, async (varbinds) => {
             if (maxIterations && i++ > maxIterations)
-                reject(new Error("maxIterations reached"));
+                reject("maxIterations reached");
             for (let vb of varbinds)
                 if (!snmp.isVarbindError(vb))
                     response.push(await vb_transform(vb, mib));
