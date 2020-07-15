@@ -205,7 +205,7 @@ Funcion para que snmp.subtree trabaje con promesas
 function streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIterations) {
     return new Promise(function (resolve, reject) {
         let i = 0;
-        let response;
+        let response = TypeResponse === "array" ? [] : {};
         session.subtree(oid, maxRepetitions, async (varbinds) => {
             if (maxIterations && i++ > maxIterations)
                 reject("maxIterations reached");
@@ -240,11 +240,10 @@ async function get_walk(target, comm, options, oids, TypeResponse, maxRepetition
             let mib = oids[oid];
             let type = "tag" in mib && mib.tag ? "tag" : "field";
             let value = await streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIterations).catch(error => {
-                if ("CmOidError" in resp.tag)
-                    resp.tag.CmOidError[oids[oid].name] = error.toString();
+                if ("tag" in resp)
+                    resp.tag.CmOidError = {...resp.tag.CmOidError, ...{[oids[oid].name]: error.toString()}};
                 else {
-                    resp.tag.CmOidError = {};
-                    resp.tag.CmOidError[oids[oid].name] = error.toString();
+                    resp.tag = {CmOidError: {[oids[oid].name]: error.toString()}};
                 }
             });
             resp[type] = {...resp[type], ...{[mib.name]: value}};
