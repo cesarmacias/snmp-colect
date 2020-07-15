@@ -1,3 +1,4 @@
+/*jslint node: true */
 'use strict';
 
 const poller = require('./snmp.js');
@@ -39,7 +40,7 @@ async function run() {
                     }
                 }
                 if ("oids_get" in conf && "measurement" in conf) {
-                    const doc =  await poller.get_all(target, conf.community, conf.options, conf.oids_get);
+                    const doc = await poller.get_all(target, conf.community, conf.options, conf.oids_get);
                     doc.measurement_name = conf.measurement;
                     doc.tag.agent_host = target;
                     if ("pollertime" in conf) doc.pollertime = conf.pollertime;
@@ -55,5 +56,6 @@ async function run() {
         .catch(error => console.error(error.toString()));
 }
 
-if ("config" in args)
+if ("config" in args) {
     run();
+}

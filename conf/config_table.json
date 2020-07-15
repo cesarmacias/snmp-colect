@@ -1,0 +1,128 @@
+{
+  "hosts": [
+    "192.168.0.1",
+    "192.168.0.2"
+  ],
+  "community": "public",
+  "maxRepetitions": 50,
+  "limit": 3,
+  "options": {
+    "version": "2c",
+    "retries": 5,
+    "timeout": 1000,
+    "port": 161
+  },
+  "inh_oids": {
+    "1.3.6.1.2.1.1.5.0": "hostname",
+    "1.3.6.1.2.1.1.6.0": "syslocation"
+  },
+  "table": [
+    {
+      "options": {
+        "measurement": "snmpif_ml",
+        "index": true,
+        "time": true
+      },
+      "oids": [
+        {
+          "name": "ifName",
+          "oid": "1.3.6.1.2.1.31.1.1.1.1",
+          "tag": true
+        },
+        {
+          "name": "ifAlias",
+          "oid": "1.3.6.1.2.1.31.1.1.1.18",
+          "tag": true
+        },
+        {
+          "name": "ifOperStatus",
+          "oid": "1.3.6.1.2.1.2.2.1.8",
+          "tag": true
+        },
+        {
+          "name": "ifType",
+          "oid": "1.3.6.1.2.1.2.2.1.3",
+          "tag": true
+        },
+        {
+          "name": "ifSpeed",
+          "oid": "1.3.6.1.2.1.31.1.1.1.15"
+        },
+        {
+          "name": "ifHCInOctets",
+          "oid": "1.3.6.1.2.1.31.1.1.1.6"
+        },
+        {
+          "name": "ifHCOutOctets",
+          "oid": "1.3.6.1.2.1.31.1.1.1.10"
+        },
+        {
+          "name": "ifInErrors",
+          "oid": "1.3.6.1.2.1.2.2.1.14"
+        },
+        {
+          "name": "ifOutErrors",
+          "oid": "1.3.6.1.2.1.2.2.1.20"
+        },
+        {
+          "name": "ifAdminStatus",
+          "oid": "1.3.6.1.2.1.2.2.1.7",
+          "tag": true
+        }
+      ]
+    },
+    {
+      "options": {
+        "measurement": "ifPower",
+        "index": true,
+        "time": true
+      },
+      "oids": [
+        {
+          "name": "rxPower",
+          "oid": "1.3.6.1.4.1.6527.3.1.2.2.4.31.1.21.1"
+        },
+        {
+          "name": "typeCalibration",
+          "oid": "1.3.6.1.4.1.6527.3.1.2.2.4.31.1.40.1",
+          "tag": true
+        }
+      ]
+    },
+    {
+      "options": {
+        "measurement": "snmp_env",
+        "index": true,
+        "time": true
+      },
+      "oids": [
+        {
+          "name": "HwSlotName",
+          "oid": "1.3.6.1.4.1.6527.3.1.2.2.1.8.1.8.1",
+          "tag": true
+        },
+        {
+          "name": "HwSlotSerial",
+          "oid": "1.3.6.1.4.1.6527.3.1.2.2.1.8.1.5.1"
+        },
+        {
+          "name": "HwSlotTemp",
+          "oid": "1.3.6.1.4.1.6527.3.1.2.2.1.8.1.18.1"
+        },
+        {
+          "name": "HwSlotSwVersion",
+          "oid": "1.3.6.1.4.1.6527.3.1.2.2.1.8.1.33.1"
+        },
+        {
+          "name": "HwSlotMac",
+          "oid": "1.3.6.1.4.1.6527.3.1.2.2.1.8.1.29.1",
+          "type": "hex"
+        },
+        {
+          "name": "HwSlotPartN",
+          "oid": "1.3.6.1.4.1.6527.3.1.2.2.1.8.1.4.1"
+        }
+      ]
+    }
+  ]
+}
