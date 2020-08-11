@@ -54,6 +54,7 @@ async function start() {
     try {
         let expect = ["hosts", "options", "community"];
         let conf = await poller.read_config(args.config, expect);
+        const ConLimit = "ConLimit" in conf ? conf.ConLimit : 3000;
         if (conf.time)
             conf.pollertime = Date.now() / 1000;
         if (typeof conf.hosts === 'string') {
