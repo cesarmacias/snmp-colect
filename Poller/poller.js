@@ -73,8 +73,7 @@ async function start() {
                     }
                 }));
             } else {
-                cosole.error('The file of hosts does not exist');
-
+                console.error('The file of hosts does not exist');
             }
         } else if (typeof conf.hosts === 'object' && Array.isArray(conf.hosts)) {
             await Promise.all(conf.hosts.map(throat(ConLimit, async (target) => {
