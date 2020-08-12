@@ -65,7 +65,11 @@ async function vb_transform(vb, oid) {
         }
         let resp = value;
         if ("conversion" in oid) {
-            resp = oid.conversion === "ipv4" ? await addr_convert(value) : value;
+            if (oid.conversion === "ipv4") {
+                resp = await addr_convert(value);
+            } else if (oid.conversion === "number") {
+                resp = value * 1;
+            }
         }
         resolve(resp);
     });

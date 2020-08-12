@@ -1,7 +1,7 @@
 # snmp-colect
 Is a script written in NODE JS, to collect SNMP data from any kind of network element, can collect SNMP information from thousands devices with many and different type of OID.
 The JSON output is formatted to work perfectly with Logtsash to send the data to Elasticsearch.
-The JSON input configuration file, has some similarities with Telegraph SNMP plugin; the object structure inherits from Influxdb, but its tested to work for 2K network devices with 30K interfaces sending the data to Elasticsearch in two minutes, whiteout a problem or loss of data.
+The JSON input configuration file, has some similarities with Telegraph SNMP plugin; the object structure inherits from Telegraf, but its tested to work for 2K network devices with 30K interfaces sending the data to Elasticsearch in less a minute, whiteout a problem or loss of data.
 The use of CPU of server that run the script is very low.
 We create this program in replace to use telegraph, because not work as we need in scenario of thousands devices with many OID.
 Now we can do more with less CPU resources
@@ -20,7 +20,7 @@ The configuration input file are divided in:
 - Inherit OIDS, OIDS with only one response that will be repeted in all responses from tables (example hostname)
 - Tables, OIDS that have the same INDEX like if-mib, can configure many tables any table with especifict measurement.
 - OIDS_GET, OIDS that response only one value, can parse STRING into multiple object usin a REGEX.
-- poller-cm.js: OIDS_WALK, OIDS that response many values, store the results in array.
+- OIDS_WALK, OIDS that response many values, store the results in array. Only for poller-cm.js
 
 Examples:
 - conf/conf_table.json -> multiple OID/Table for 2 devices
@@ -49,6 +49,9 @@ Version 1.1:
 - add convert ipv4 from hex or integer to string
 - poller-cm.js support snmpwalk OID to array
 
+Version 1.2:
+- add convert string response to number
+- add input of list of hosts from text file, each IP by line
 
 Requests:
 - list of hosts can be a SQL to database
