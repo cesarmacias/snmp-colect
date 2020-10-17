@@ -100,6 +100,9 @@ async function run(file) {
                 if (result && k in result)
                     obj[k] = {...obj[k], ...result[k]};
             }
+            if ("measurement" in conf) {
+                obj.measurement_name = conf.measurement;
+            }
             console.log(JSON.stringify(obj));
         }));
     } catch (error) {
