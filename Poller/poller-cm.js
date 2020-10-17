@@ -38,9 +38,12 @@ async function process_target(target, comm, opt, oids, vendorList, mac, maxRepet
             let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.walk) : oids.walk;
             walk = await poller.get_walk(target, comm, opt, filterOids, "array", maxRepetitions, maxIterations);
         }
-        /* bug #1 if config not hav walk the script faild*/
         for (let k of ["tag", "field"]) {
-            obj[k] = {...get[k], ...walk[k]};
+            if (k in get) {
+                obj[k] = k in walk ? {...get[k], ...walk[k]} : get[k];
+            } else {
+                obj[k] = k in walk ? walk[k] : undefined;
+            }
         }
         return obj;
     } catch (error) {
