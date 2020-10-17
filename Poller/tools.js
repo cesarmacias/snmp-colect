@@ -7,7 +7,6 @@ Funcion para validar si una variable es un objeto
 function isObject(a) {
     return (!!a) && (a.constructor === Object);
 }
-
 /*
 Funcion para expandir un objeto en formato "."
  */
@@ -36,11 +35,26 @@ function ObjExpand(obj) {
     return obj;
 }
 
+/*
+    Custom Error Message
+ */
+class CustomError extends Error {
+    constructor(ErrorName, ...params) {
+        // Pasa los argumentos restantes (incluidos los específicos del proveedor) al constructor padre
+        super(...params)
+        // Mantiene un seguimiento adecuado de la pila para el lugar donde se lanzó nuestro error (solo disponible en V8)
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, CustomError);
+        }
+        this.name = ErrorName;
+    }
+}
 
 /*
 Funciones a Exportar
  */
 module.exports = {
+    CustomError,
     isObject,
     ObjExpand
 };

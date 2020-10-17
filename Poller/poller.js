@@ -7,8 +7,10 @@ const args = require("minimist")(process.argv.slice(2));
 const fs = require("fs");
 const throat = require('throat');
 const addr = require("ip-address");
+const func = require("./tools.js");
+const mysql = require("mysql");
 
-async function process_target(target, conf) {
+async function process_target(target, conf, inhObj) {
     const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids) : false;
     let result = [];
     if ("table" in conf) {
@@ -42,10 +44,23 @@ async function process_target(target, conf) {
         doc.measurement_name = conf.measurement;
         doc.tag.agent_host = target;
         if ("pollertime" in conf) doc.pollertime = conf.pollertime;
-        if (inh)
+        if (inh) {
             for (let i in inh) doc.tag[i] = inh[i];
-        console.log(JSON.stringify(doc));
-        result.push(doc);
+        }
+        let collected = {};
+        if (func.isObject(inhObj)) {
+            for (let k of ["tag", "field"]) {
+                if (k in doc) {
+                    collected[k] = k in inhObj ? {...doc[k], ...inhObj[k]} : doc[k];
+                } else if (k in inhObj) {
+                    collected[k] = inhObj[k];
+                }
+            }
+        } else {
+            collected = doc;
+        }
+        console.log(JSON.stringify(collected));
+        result.push(collected);
     }
     return result;
 }
@@ -72,9 +87,7 @@ async function start() {
                         }
                     }
                 }));
-            } else {
-                console.error('The file of hosts does not exist');
-            }
+            } else throw new func.CustomError('Config', 'File of hosts not exists');
         } else if (typeof conf.hosts === 'object' && Array.isArray(conf.hosts)) {
             await Promise.all(conf.hosts.map(throat(ConLimit, async (target) => {
                 if (typeof target === 'string') {
@@ -84,12 +97,34 @@ async function start() {
                     }
                 }
             })));
-        }
+        } else if (func.isObject(conf.hosts) && "dbOpt" in conf.hosts && "sql" in conf.hosts && "ipField" in conf.hosts) {
+            const connection = mysql.createConnection(conf.hosts.dbOpt);
+            connection.connect();
+            let data = [];
+            await connection.query(conf.hosts.sql, (err, rows) => {
+                if (err) throw err;
+                rows.forEach((obj) => {
+                    data.push(func.ObjExpand(obj));
+                });
+            });
+            connection.end();
+            await Promise.all(data.map(throat(ConLimit, async (doc) => {
+                let target = doc[conf.hosts.ipField];
+                if (typeof target === 'string') {
+                    let ipv4 = new addr.Address4(target);
+                    if (ipv4.isValid()) {
+                        await process_target(target, conf, doc);
+                    }
+                }
+            })));
+        } else throw new func.CustomError('Config', 'Type of list of hosts are not defined');
     } catch (error) {
         console.error(error.toString());
     }
 }
 
 if ("config" in args) {
-    start();
+    start().catch(error => {
+        console.error(error)
+    });
 }
