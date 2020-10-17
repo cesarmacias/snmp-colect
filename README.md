@@ -53,6 +53,9 @@ Version 1.2:
 - add convert string response to number
 - add input of list of hosts from text file, each IP by line
 
+Version 1.3a
+- add script to read mysql list of hosts as roadmap to principal script
+
 Requests:
 - list of hosts can be a SQL to database
 - list of hosts can be stdin (to execute from result of another script)

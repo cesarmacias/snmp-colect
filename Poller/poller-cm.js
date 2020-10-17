@@ -38,6 +38,7 @@ async function process_target(target, comm, opt, oids, vendorList, mac, maxRepet
             let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.walk) : oids.walk;
             walk = await poller.get_walk(target, comm, opt, filterOids, "array", maxRepetitions, maxIterations);
         }
+        /* bug #1 if config not hav walk the script faild*/
         for (let k of ["tag", "field"]) {
             obj[k] = {...get[k], ...walk[k]};
         }
@@ -54,7 +55,7 @@ async function run(file) {
         const expect = ["options", "community", "iterable"];
         const conf = await poller.read_config(file, expect);
         if ("vendorfile" in conf) {
-            const rawdata = fs.readFileSync(conf.vendorfile);
+            const rawdata = fs.readFileSync(conf.vendorfile, 'utf8');
             vendorList = JSON.parse(rawdata);
         }
         if ("filtered" in conf && "filter" in conf) {
@@ -98,5 +99,7 @@ async function run(file) {
 }
 
 if ("config" in args) {
-    run(args.config);
+    run(args.config).catch(error => {
+        console.error(error)
+    })
 }
