@@ -40,9 +40,9 @@ async function process_target(target, comm, opt, oids, vendorList, mac, maxRepet
         }
         for (let k of ["tag", "field"]) {
             if (k in get) {
-                obj[k] = k in walk ? {...get[k], ...walk[k]} : get[k];
+                obj[k] = walk && k in walk ? {...get[k], ...walk[k]} : get[k];
             } else {
-                obj[k] = k in walk ? walk[k] : undefined;
+                obj[k] = walk && k in walk ? walk[k] : undefined;
             }
         }
         return obj;
