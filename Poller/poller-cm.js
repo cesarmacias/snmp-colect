@@ -72,7 +72,12 @@ async function run(file) {
             output: process.stdout,
             terminal: false,
         });
-        const oids = {"get": conf.oids_get, "walk": conf.oids_walk};
+        let oids;
+        if ("oids_get" in conf) {
+            oids = "oids_walk" in conf ? {"get": conf.oids_get, "walk": conf.oids_walk} : {"get": conf.oids_get};
+        } else {
+            oids = {"walk": conf.oids_walk};
+        }
         rl.on("line", throat(ConLimit, async (line) => {
             const obj = JSON.parse(line);
             const target = obj.tag[conf.iterable];
