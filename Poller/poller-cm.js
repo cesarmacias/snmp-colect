@@ -8,24 +8,21 @@ const fs = require("fs");
 const throat = require('throat');
 
 async function filter_vendor(vendorList, mac, oids_get) {
-    if (vendorList && mac) {
-        let vendor = await vendorList.find((vendorItem) => {
-            return (
-                vendorItem.oui.findIndex((ouiItem) => {
-                    return ouiItem === mac.substring(0, 6);
-                }) !== -1
-            );
-        });
-        let vendorName = vendor ? vendor.vendor : "";
-        let keyNames = Object.keys(oids_get);
-        let oids = {};
-        for await (let key of keyNames) {
-            if (!oids_get[key].vendor || oids_get[key].vendor.includes(vendorName))
-                oids[key] = oids_get[key];
-        }
-    } else {
-        oids = oids_get;
+    let vendor = await vendorList.find((vendorItem) => {
+        return (
+            vendorItem.oui.findIndex((ouiItem) => {
+                return ouiItem === mac.substring(0, 6);
+            }) !== -1
+        );
+    });
+    let vendorName = vendor ? vendor.vendor : "";
+    let keyNames = Object.keys(oids_get);
+    let oids = {};
+    for await (let key of keyNames) {
+        if (!oids_get[key].vendor || oids_get[key].vendor.includes(vendorName))
+            oids[key] = oids_get[key];
     }
+
     return oids;
 }
 
@@ -61,7 +58,6 @@ async function run(file) {
         let filter = false;
         const expect = ["options", "community", "iterable"];
         const conf = await poller.read_config(file, expect);
-        vendorList = undefined;
         if ("vendorfile" in conf) {
             const rawdata = fs.readFileSync(conf.vendorfile, 'utf8');
             vendorList = JSON.parse(rawdata);
