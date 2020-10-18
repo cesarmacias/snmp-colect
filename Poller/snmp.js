@@ -176,7 +176,7 @@ async function get_oids(target, comm, options, oids) {
 
 /* Funcion para obtener varios datos por snmpget, desde un array de OIDS
  * * */
-async function get_all(target, comm, options, oids) {
+async function get_all(target, comm, options, oids, reportError) {
     return new Promise(async (resolve, reject) => {
         let session = snmp.createSession(target, comm, options);
         let _oids = Object.keys(oids);
@@ -185,7 +185,9 @@ async function get_all(target, comm, options, oids) {
         resp.field = {};
         session.get(_oids, async (error, varbinds) => {
             if (error) {
-                reject(error);
+                if (reportError) {
+                    resolve({"tag": {"error": error}});
+                } else reject(error);
             } else {
                 for (const vb of varbinds) {
                     if (!(snmp.isVarbindError(vb))) {

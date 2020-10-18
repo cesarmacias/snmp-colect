@@ -40,7 +40,7 @@ async function process_target(target, conf, inhObj) {
         }
     }
     if ("oids_get" in conf && "measurement" in conf) {
-        const doc = await poller.get_all(target, conf.community, conf.options, conf.oids_get);
+        const doc = await poller.get_all(target, conf.community, conf.options, conf.oids_get, conf.reportError);
         doc.measurement_name = conf.measurement;
         doc.tag.agent_host = target;
         if ("pollertime" in conf) doc.pollertime = conf.pollertime;
@@ -48,7 +48,7 @@ async function process_target(target, conf, inhObj) {
             for (let i in inh) doc.tag[i] = inh[i];
         }
         let collected = {};
-        if (func.isObject(inhObj)) {
+        if ("tag" in inhObj || "field" in inhObj) {
             for (let k of ["tag", "field"]) {
                 if (k in doc) {
                     collected[k] = k in inhObj ? {...doc[k], ...inhObj[k]} : doc[k];
@@ -112,7 +112,7 @@ async function start() {
                 if (typeof target === 'string') {
                     let ipv4 = new addr.Address4(target);
                     if (ipv4.isValid()) {
-                        if ("comField" in conf.hosts) conf.community = conf.hosts.comField;
+                        if ("comField" in conf.hosts) conf.community = doc[conf.hosts.comField];
                         await process_target(target, conf, doc);
                     }
                 }

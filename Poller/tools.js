@@ -25,7 +25,6 @@ function parseDotNotation(str, val, obj) {
     currentObj[keys[i]] = val;
     delete obj[str];
 }
-
 function ObjExpand(obj) {
     for (const key in obj) {
         if (key.indexOf(".") !== -1) {
@@ -34,7 +33,6 @@ function ObjExpand(obj) {
     }
     return obj;
 }
-
 /*
     Custom Error Message
  */
