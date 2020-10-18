@@ -103,7 +103,7 @@ async function start() {
                 const connection = await mysql.createConnection(conf.hosts.dbOpt);
                 const [rows, fields] = await connection.query(conf.hosts.sql);
                 await connection.end();
-                rows.forEach((obj) => {
+                rows.forEach(obj => {
                     data.push(func.ObjExpand(obj));
                 });
             } else throw new func.CustomError('DbConfig', 'Type of DB is not allowed');
