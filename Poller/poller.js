@@ -97,22 +97,25 @@ async function start() {
                     }
                 }
             })));
-        } else if (func.isObject(conf.hosts) && "dbOpt" in conf.hosts && "sql" in conf.hosts && "ipField" in conf.hosts) {
-            const connection = mysql.createConnection(conf.hosts.dbOpt);
-            connection.connect();
+        } else if (func.isObject(conf.hosts) && "type" in conf.hosts && "dbOpt" in conf.hosts && "sql" in conf.hosts && "ipField" in conf.hosts) {
             let data = [];
-            await connection.query(conf.hosts.sql, (err, rows) => {
-                if (err) throw err;
-                rows.forEach((obj) => {
-                    data.push(func.ObjExpand(obj));
+            if (conf.hosts.type === "mysql") {
+                const connection = mysql.createConnection(conf.hosts.dbOpt);
+                connection.connect();
+                await connection.query(conf.hosts.sql, (err, rows) => {
+                    if (err) throw err;
+                    rows.forEach((obj) => {
+                        data.push(func.ObjExpand(obj));
+                    });
                 });
-            });
-            connection.end();
+                connection.end();
+            } else throw new func.CustomError('DbConfig', 'Type of DB is not allowed');
             await Promise.all(data.map(throat(ConLimit, async (doc) => {
                 let target = doc[conf.hosts.ipField];
                 if (typeof target === 'string') {
                     let ipv4 = new addr.Address4(target);
                     if (ipv4.isValid()) {
+                        if ("comField" in conf.hosts) conf.community = conf.hosts.comField;
                         await process_target(target, conf, doc);
                     }
                 }
