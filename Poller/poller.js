@@ -8,7 +8,7 @@ const fs = require("fs");
 const throat = require('throat');
 const addr = require("ip-address");
 const func = require("./tools.js");
-const mysql = require("mysql");
+const mysql = require('mysql2/promise');
 
 async function process_target(target, conf, inhObj) {
     const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids) : false;
@@ -100,15 +100,12 @@ async function start() {
         } else if (func.isObject(conf.hosts) && "type" in conf.hosts && "dbOpt" in conf.hosts && "sql" in conf.hosts && "ipField" in conf.hosts) {
             let data = [];
             if (conf.hosts.type === "mysql") {
-                const connection = mysql.createConnection(conf.hosts.dbOpt);
-                connection.connect();
-                await connection.query(conf.hosts.sql, (err, rows) => {
-                    if (err) throw err;
-                    rows.forEach((obj) => {
-                        data.push(func.ObjExpand(obj));
-                    });
+                const connection = await mysql.createConnection(conf.hosts.dbOpt);
+                const [rows, fields] = await connection.query(conf.hosts.sql);
+                await connection.end();
+                rows.forEach((obj) => {
+                    data.push(func.ObjExpand(obj));
                 });
-                connection.end();
             } else throw new func.CustomError('DbConfig', 'Type of DB is not allowed');
             await Promise.all(data.map(throat(ConLimit, async (doc) => {
                 let target = doc[conf.hosts.ipField];
