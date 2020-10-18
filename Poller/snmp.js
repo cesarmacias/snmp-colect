@@ -158,7 +158,9 @@ async function get_oids(target, comm, options, oids) {
         session.get(Object.keys(oids), (error, varbinds) => {
             let resp = {};
             if (error) {
-                console.error("get|" + target + "|oids|" + error.toString());
+                if (reportError) {
+                    resolve({"tag": {"SnmpError": {"inh_oids": error}}});
+                } else console.error("get|" + target + "|oids|" + error.toString());
             } else {
                 resp = varbinds.reduce((vbs, vb) => {
                     if (!(snmp.isVarbindError(vb))) {
@@ -186,7 +188,7 @@ async function get_all(target, comm, options, oids, reportError) {
         session.get(_oids, async (error, varbinds) => {
             if (error) {
                 if (reportError) {
-                    resolve({"tag": {"error": error}});
+                    resolve({"tag": {"SnmpError": {"oids_get": error}}});
                 } else reject(error);
             } else {
                 for (const vb of varbinds) {
