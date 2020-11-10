@@ -10,6 +10,25 @@ const addr = require("ip-address");
 const func = require("./tools.js");
 const mysql = require('mysql2/promise');
 
+function print_ndjson(doc, inh, inhObj) {
+    let collected = {};
+    if (inh) {
+        for (let i in inh) doc.tag[i] = inh[i];
+    }
+    if ("tag" in inhObj || "field" in inhObj) {
+        for (let k of ["tag", "field"]) {
+            if (k in doc) {
+                collected[k] = k in inhObj ? {...doc[k], ...inhObj[k]} : doc[k];
+            } else if (k in inhObj) {
+                collected[k] = inhObj[k];
+            }
+        }
+    } else {
+        collected = doc;
+    }
+    console.log(JSON.stringify(collected));
+}
+
 async function process_target(target, conf, inhObj) {
     const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids, conf.reportError) : false;
     let result = [];
@@ -31,10 +50,7 @@ async function process_target(target, conf, inhObj) {
                 if ("pollertime" in conf) doc.pollertime = conf.pollertime;
                 doc.tag.agent_host = target;
                 doc.measurement_name = table.options.measurement;
-                if (inh)
-                    for (let i in inh)
-                        doc.tag[i] = inh[i];
-                console.log(JSON.stringify(doc));
+                print_ndjson(doc, inh, inhObj);
             }
             result.push(part);
         }
@@ -44,22 +60,7 @@ async function process_target(target, conf, inhObj) {
         doc.measurement_name = conf.measurement;
         doc.tag.agent_host = target;
         if ("pollertime" in conf) doc.pollertime = conf.pollertime;
-        if (inh) {
-            for (let i in inh) doc.tag[i] = inh[i];
-        }
-        let collected = {};
-        if ("tag" in inhObj || "field" in inhObj) {
-            for (let k of ["tag", "field"]) {
-                if (k in doc) {
-                    collected[k] = k in inhObj ? {...doc[k], ...inhObj[k]} : doc[k];
-                } else if (k in inhObj) {
-                    collected[k] = inhObj[k];
-                }
-            }
-        } else {
-            collected = doc;
-        }
-        console.log(JSON.stringify(collected));
+        print_ndjson(doc, inh, inhObj);
         result.push(collected);
     }
     return result;
@@ -97,26 +98,46 @@ async function start() {
                     }
                 }
             })));
-        } else if (func.isObject(conf.hosts) && "type" in conf.hosts && "dbOpt" in conf.hosts && "sql" in conf.hosts && "ipField" in conf.hosts) {
+        } else if (func.isObject(conf.hosts) && "type" in conf.hosts && "ipField" in conf.hosts) {
             let data = [];
             if (conf.hosts.type === "mysql") {
+                if (!("dbOpt" in conf.hosts && "sql" in conf.hosts)) throw new func.CustomError('DbConfig', 'db parameters are incomplete');
                 const connection = await mysql.createConnection(conf.hosts.dbOpt);
                 const [rows, fields] = await connection.query(conf.hosts.sql);
                 await connection.end();
                 rows.forEach(obj => {
                     data.push(func.ObjExpand(obj));
                 });
-            } else throw new func.CustomError('DbConfig', 'Type of DB is not allowed');
-            await Promise.all(data.map(throat(ConLimit, async (doc) => {
-                let target = doc[conf.hosts.ipField];
-                if (typeof target === 'string') {
-                    let ipv4 = new addr.Address4(target);
-                    if (ipv4.isValid()) {
-                        if ("comField" in conf.hosts) conf.community = doc[conf.hosts.comField];
-                        await process_target(target, conf, doc);
+            } else if (conf.hosts.type === "stdin") {
+                const rl = readline.createInterface({
+                    input: process.stdin,
+                    output: process.stdout,
+                    terminal: false,
+                });
+                rl.on("line", throat(ConLimit, async (line) => {
+                    const doc = JSON.parse(line);
+                    let target = doc[conf.hosts.ipField];
+                    if (typeof target === 'string') {
+                        let ipv4 = new addr.Address4(target);
+                        if (ipv4.isValid()) {
+                            if ("comField" in conf.hosts) conf.community = doc[conf.hosts.comField];
+                            await process_target(target, conf, doc);
+                        }
                     }
-                }
-            })));
+                }));
+            } else throw new func.CustomError('DbConfig', 'Type of DB is not allowed');
+            if (data.length > 0) {
+                await Promise.all(data.map(throat(ConLimit, async (doc) => {
+                    let target = doc[conf.hosts.ipField];
+                    if (typeof target === 'string') {
+                        let ipv4 = new addr.Address4(target);
+                        if (ipv4.isValid()) {
+                            if ("comField" in conf.hosts) conf.community = doc[conf.hosts.comField];
+                            await process_target(target, conf, doc);
+                        }
+                    }
+                })));
+            }
         } else throw new func.CustomError('Config', 'Type of list of hosts are not defined');
     } catch (error) {
         console.error(error.toString());
