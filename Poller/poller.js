@@ -11,7 +11,7 @@ const func = require("./tools.js");
 const mysql = require('mysql2/promise');
 
 async function process_target(target, conf, inhObj) {
-    const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids) : false;
+    const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids, conf.reportError) : false;
     let result = [];
     if ("table" in conf) {
         for (const table of conf.table) {
@@ -24,7 +24,7 @@ async function process_target(target, conf, inhObj) {
                 console.error(new Error("no ha declarado options"));
                 continue;
             }
-            const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.limit);
+            const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.limit, conf.reportError);
             for (let k in part) {
                 let doc = part[k];
                 if ("index" in table.options && table.options.index) doc.tag.index = k;

@@ -75,8 +75,9 @@ async function vb_transform(vb, oid) {
     });
 }
 
-/* Funcion para procesar los datos obtenidos de un snmpwalk a un dispositivo, los valores los asocia a "field" o "tag"
- *  * */
+/*
+Funcion para procesar los datos obtenidos de un snmpwalk a un dispositivo, los valores los asocia a "field" o "tag"
+*/
 async function feedCb(varbinds) {
     let self = this;
     for (let i = 0; i < varbinds.length; i++)
@@ -103,8 +104,9 @@ async function feedCb(varbinds) {
         }
 }
 
-/* Funcion para leer la configuracion para el proceso de poleo snmp, fuente un archivo JSON
-  */
+/*
+Funcion para leer la configuracion para el proceso de poleo snmp, fuente un archivo JSON
+*/
 async function read_config(file, inh) {
     return new Promise((resolve, reject) => {
         let config;
@@ -127,15 +129,16 @@ async function read_config(file, inh) {
     });
 }
 
-/* Funcion para obtener datos tipo tabla (indice compartido) por SNMP
- */
-async function get_table(target, comm, options, oids, max, limit) {
+/*
+Funcion para obtener datos tipo tabla (indice compartido) por SNMP
+*/
+async function get_table(target, comm, options, oids, max, limit, reportError) {
     return new Promise((resolve, reject) => {
         let obj = {};
         let session = snmp.createSession(target, comm, options);
         async.eachLimit(oids, limit, (oid, callback) => {
             session.subtree(oid.oid, max, feedCb.bind({mib: oid, resp: obj}), (error) => {
-                if (error)
+                if (error && reportError)
                     console.error("table|" + target + "|" + oid.oid + "|" + error.toString());
                 callback();
             });
@@ -150,17 +153,17 @@ async function get_table(target, comm, options, oids, max, limit) {
     });
 }
 
-/* Funcion para obtener datos snmpget para ser heredados en las tablas
- *  * */
-async function get_oids(target, comm, options, oids) {
+/*
+Funcion para obtener datos snmpget para ser heredados en las tablas
+*/
+async function get_oids(target, comm, options, oids, reportError) {
     return new Promise((resolve) => {
         let session = snmp.createSession(target, comm, options);
         session.get(Object.keys(oids), (error, varbinds) => {
             let resp = {};
-            if (error) {
-                if (reportError) {
-                    resolve({"tag": {"SnmpError": {"inh_oids": error}}});
-                } else console.error("get|" + target + "|oids|" + error.toString());
+            if (error && reportError) {
+                resolve({"tag": {"SnmpError": {"inh_oids": error}}});
+
             } else {
                 resp = varbinds.reduce((vbs, vb) => {
                     if (!(snmp.isVarbindError(vb))) {
@@ -176,8 +179,9 @@ async function get_oids(target, comm, options, oids) {
     });
 }
 
-/* Funcion para obtener varios datos por snmpget, desde un array de OIDS
- * * */
+/*
+Funcion para obtener varios datos por snmpget, desde un array de OIDS
+*/
 async function get_all(target, comm, options, oids, reportError) {
     return new Promise(async (resolve, reject) => {
         let session = snmp.createSession(target, comm, options);
@@ -188,7 +192,7 @@ async function get_all(target, comm, options, oids, reportError) {
         session.get(_oids, async (error, varbinds) => {
             if (error) {
                 if (reportError) {
-                    resolve({"tag": {"SnmpError": {"oids_get": error}}});
+                    resolve({"tag": {"SnmpError": {"get_all": error}}});
                 } else reject(error);
             } else {
                 for (const vb of varbinds) {
@@ -208,7 +212,7 @@ async function get_all(target, comm, options, oids, reportError) {
 
 /*
 Funcion para que snmp.subtree trabaje con promesas
- */
+*/
 
 function streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIterations) {
     return new Promise(function (resolve, reject) {
@@ -239,8 +243,8 @@ function streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIt
 
 /*
 Funcion para obtener datos por snmpwalk
- */
-async function get_walk(target, comm, options, oids, TypeResponse, maxRepetitions, maxIterations) {
+*/
+async function get_walk(target, comm, options, oids, TypeResponse, maxRepetitions, maxIterations, reportError) {
     try {
         const session = snmp.createSession(target, comm, options);
         let resp = {};
@@ -248,10 +252,12 @@ async function get_walk(target, comm, options, oids, TypeResponse, maxRepetition
             let mib = oids[oid];
             let type = "tag" in mib && mib.tag ? "tag" : "field";
             let value = await streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIterations).catch(error => {
-                if ("tag" in resp)
-                    resp.tag.CmOidError = {...resp.tag.CmOidError, ...{[oids[oid].name]: error.toString()}};
-                else {
-                    resp.tag = {CmOidError: {[oids[oid].name]: error.toString()}};
+                if (reportError) {
+                    if ("tag" in resp)
+                        resp.tag.SnmpError = {...resp.tag.SnmpError, ...{[oids[oid].name]: error}};
+                    else {
+                        resp.tag = {SnmpError: {[oids[oid].name]: error}};
+                    }
                 }
             });
             resp[type] = {...resp[type], ...{[mib.name]: value}};
@@ -259,13 +265,15 @@ async function get_walk(target, comm, options, oids, TypeResponse, maxRepetition
         session.close();
         return resp;
     } catch (error) {
-        console.error(error.toString());
+        if (reportError) {
+            return {"tag": {"SnmpError": error}}
+        }
     }
 }
 
 /*
 Funciones a Exportar
- */
+*/
 module.exports = {
     get_table,
     get_oids,
