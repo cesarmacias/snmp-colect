@@ -27,6 +27,7 @@ function print_ndjson(doc, inh, inhObj) {
         collected = doc;
     }
     console.log(JSON.stringify(collected));
+    return collected;
 }
 
 async function process_target(target, conf, inhObj) {
@@ -60,7 +61,7 @@ async function process_target(target, conf, inhObj) {
         doc.measurement_name = conf.measurement;
         doc.tag.agent_host = target;
         if ("pollertime" in conf) doc.pollertime = conf.pollertime;
-        print_ndjson(doc, inh, inhObj);
+        let collected = print_ndjson(doc, inh, inhObj);
         result.push(collected);
     }
     return result;
