@@ -118,12 +118,18 @@ async function start() {
                     terminal: false,
                 });
                 rl.on("line", throat(ConLimit, async (line) => {
-                    const doc = JSON.parse(line);
-                    let target = doc[conf.hosts.ipField];
+                    let doc = {};
+                    let target;
+                    try {
+                        doc = func.ObjExpand(JSON.parse(line));
+                        target = doc[conf.hosts.ipField];
+                    } catch (e) {
+                        target = line;
+                    }
                     if (typeof target === 'string') {
                         let ipv4 = new addr.Address4(target);
                         if (ipv4.isValid()) {
-                            if ("comField" in conf.hosts) conf.community = doc[conf.hosts.comField];
+                            if ("comField" in conf.hosts && conf.hosts.comField in doc) conf.community = doc[conf.hosts.comField];
                             await process_target(target, conf, doc);
                         }
                     }
@@ -135,7 +141,7 @@ async function start() {
                     if (typeof target === 'string') {
                         let ipv4 = new addr.Address4(target);
                         if (ipv4.isValid()) {
-                            if ("comField" in conf.hosts) conf.community = doc[conf.hosts.comField];
+                            if ("comField" in conf.hosts && conf.hosts.comField in doc) conf.community = doc[conf.hosts.comField];
                             await process_target(target, conf, doc);
                         }
                     }
