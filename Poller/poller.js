@@ -15,12 +15,14 @@ function print_ndjson(doc, inh, inhObj) {
     if (inh) {
         for (let i in inh) doc.tag[i] = inh[i];
     }
-    if ("tag" in inhObj || "field" in inhObj) {
-        for (let k of ["tag", "field"]) {
-            if (k in doc) {
-                collected[k] = k in inhObj ? {...doc[k], ...inhObj[k]} : doc[k];
-            } else if (k in inhObj) {
-                collected[k] = inhObj[k];
+    if (inhObj) {
+        if ("tag" in inhObj || "field" in inhObj) {
+            for (let k of ["tag", "field"]) {
+                if (k in doc) {
+                    collected[k] = k in inhObj ? {...doc[k], ...inhObj[k]} : doc[k];
+                } else if (k in inhObj) {
+                    collected[k] = inhObj[k];
+                }
             }
         }
     } else {
@@ -141,7 +143,7 @@ async function start() {
             }
         } else throw new func.CustomError('Config', 'Type of list of hosts are not defined');
     } catch (error) {
-        console.error(error.toString());
+        console.error(error);
     }
 }
 
