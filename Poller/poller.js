@@ -118,8 +118,7 @@ async function start() {
                     terminal: false,
                 });
                 rl.on("line", throat(ConLimit, async (line) => {
-                    let doc = {};
-                    let target;
+                    let doc, target;
                     try {
                         doc = func.ObjExpand(JSON.parse(line));
                         target = doc[conf.hosts.ipField];
@@ -129,8 +128,12 @@ async function start() {
                     if (typeof target === 'string') {
                         let ipv4 = new addr.Address4(target);
                         if (ipv4.isValid()) {
-                            if ("comField" in conf.hosts && conf.hosts.comField in doc) conf.community = doc[conf.hosts.comField];
-                            await process_target(target, conf, doc);
+                            if (func.isObject(doc)) {
+                                if ("comField" in conf.hosts && conf.hosts.comField in doc) conf.community = doc[conf.hosts.comField];
+                                await process_target(target, conf, doc);
+                            } else {
+                                await process_target(target, conf);
+                            }
                         }
                     }
                 }));
