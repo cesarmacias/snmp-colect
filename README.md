@@ -57,9 +57,9 @@ Version 1.3
 - add option to read mysql sql as list of hosts with aditional parameters
 - add option to read stdin as list of hosts in NDJSON with aditional parameters
 - add option to read stdin as list of hostsm IP line by line
+- add option of get_walk to poller.js
 
 # Roadmap
 - list of hosts can be SQL query to PGSQL
-- add option of get_walk to poller.js
 - re-write function get_table to not use async external library
 - add poller-cm.js features to poller.js to have unified script
