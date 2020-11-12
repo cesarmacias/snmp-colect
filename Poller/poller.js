@@ -53,17 +53,31 @@ async function process_target(target, conf, inhObj) {
                 if ("pollertime" in conf) doc.pollertime = conf.pollertime;
                 doc.tag.agent_host = target;
                 doc.measurement_name = table.options.measurement;
-                print_ndjson(doc, inh, inhObj);
+                let collected = print_ndjson(doc, inh, inhObj);
+                result.push(collected);
             }
-            result.push(part);
         }
     }
-    if ("oids_get" in conf && "measurement" in conf) {
-        const doc = await poller.get_all(target, conf.community, conf.options, conf.oids_get, conf.reportError);
-        doc.measurement_name = conf.measurement;
-        doc.tag.agent_host = target;
-        if ("pollertime" in conf) doc.pollertime = conf.pollertime;
-        let collected = print_ndjson(doc, inh, inhObj);
+    if ("oids_get" in conf || "oids_walk" in conf) {
+        let obj = {
+            "measurement_name": conf.measurement,
+            "pollertime": conf.pollertime,
+            "tag": {"agent_host": target},
+            "field": {}
+        };
+        let get, walk;
+        if ("oids_get" in conf)
+            get = await poller.get_all(target, conf.community, conf.options, conf.oids_get, conf.reportError);
+        if ("oids_walk" in conf)
+            walk = await poller.get_walk(target, conf.community, conf.options, conf.oids_walk, "array", conf.maxRepetitions, conf.maxIterations, conf.reportError);
+        for (let k of ["tag", "field"]) {
+            if (k in get) {
+                obj[k] = walk && k in walk ? {...obj[k], ...get[k], ...walk[k]} : {...obj[k], ...get[k]};
+            } else {
+                obj[k] = walk && k in walk ? {...obj[k], ...walk[k]} : obj[k];
+            }
+        }
+        let collected = print_ndjson(obj, inh, inhObj);
         result.push(collected);
     }
     return result;
@@ -71,9 +85,9 @@ async function process_target(target, conf, inhObj) {
 
 async function start() {
     try {
-        let expect = ["hosts", "options", "community"];
+        let expect = ["hosts", "options", "community", "measurement"];
         let conf = await poller.read_config(args.config, expect);
-        const ConLimit = "ConLimit" in conf ? conf.ConLimit : 3000;
+        const ConLimit = conf.ConLimit;
         if (conf.time)
             conf.pollertime = Date.now() / 1000;
         if (typeof conf.hosts === 'string') {

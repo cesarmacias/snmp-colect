@@ -123,8 +123,11 @@ async function read_config(file, inh) {
             if ("version" in config.options)
                 config.options.version = config.options.version === "1" ? snmp.Version1 : snmp.Version2c;
         if (!("maxRepetitions" in config)) config.maxRepetitions = 20;
-        if (!("limit" in config)) config.limit = 3; //se debe eliminar esta configuracion
+        if (!("limit" in config)) config.limit = 1;
         if (!("time" in config)) config.time = true;
+        if (!("ConLimit" in config)) config.ConLimit = 3000;
+        if (!("maxIterations" in config)) config.maxIterations = 5;
+        if (!("reportError" in config)) config.reportError = true;
         resolve(config);
     });
 }
@@ -145,7 +148,7 @@ async function get_table(target, comm, options, oids, max, limit, reportError) {
         }, function (error) {
             session.close();
             if (error) {
-                console.error(error.toString());
+                if (reportError) console.error(error.toString());
                 reject(new Error("SNMP error host: " + target));
             }
             resolve(obj);
