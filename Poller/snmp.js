@@ -138,8 +138,8 @@ async function get_table(target, comm, options, oids, max, limit, reportError) {
         let session = snmp.createSession(target, comm, options);
         async.eachLimit(oids, limit, (oid, callback) => {
             session.subtree(oid.oid, max, feedCb.bind({mib: oid, resp: obj}), (error) => {
-                if (error && reportError)
-                    console.error("table|" + target + "|" + oid.oid + "|" + error.toString());
+                if (error)
+                    if (reportError) console.error("table|" + target + "|" + oid.oid + "|" + error.toString());
                 callback();
             });
         }, function (error) {
@@ -161,9 +161,8 @@ async function get_oids(target, comm, options, oids, reportError) {
         let session = snmp.createSession(target, comm, options);
         session.get(Object.keys(oids), (error, varbinds) => {
             let resp = {};
-            if (error && reportError) {
-                resolve({"tag": {"SnmpError": {"inh_oids": error}}});
-
+            if (error) {
+                if (reportError) resolve({"tag": {"SnmpError": {"inh_oids": error}}});
             } else {
                 resp = varbinds.reduce((vbs, vb) => {
                     if (!(snmp.isVarbindError(vb))) {
