@@ -128,6 +128,7 @@ async function read_config(file, inh) {
         if (!("ConLimit" in config)) config.ConLimit = 3000;
         if (!("maxIterations" in config)) config.maxIterations = 5;
         if (!("reportError" in config)) config.reportError = true;
+        if (!("community" in config)) config.community = "public";
         resolve(config);
     });
 }

@@ -85,7 +85,7 @@ async function process_target(target, conf, inhObj) {
 
 async function start() {
     try {
-        let expect = ["hosts", "options", "community", "measurement"];
+        let expect = ["hosts", "options", "measurement"];
         let conf = await poller.read_config(args.config, expect);
         const ConLimit = conf.ConLimit;
         if (conf.time)
