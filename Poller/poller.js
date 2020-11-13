@@ -71,7 +71,7 @@ async function process_target(target, conf, inhObj) {
         if ("oids_walk" in conf)
             walk = await poller.get_walk(target, conf.community, conf.options, conf.oids_walk, "array", conf.maxRepetitions, conf.maxIterations, conf.reportError);
         for (let k of ["tag", "field"]) {
-            if (k in get) {
+            if (get && k in get) {
                 obj[k] = walk && k in walk ? {...obj[k], ...get[k], ...walk[k]} : {...obj[k], ...get[k]};
             } else {
                 obj[k] = walk && k in walk ? {...obj[k], ...walk[k]} : obj[k];

@@ -279,6 +279,7 @@ async function get_walk(target, comm, options, oids, TypeResponse, maxRepetition
         }
     } finally {
         if (oiderror && "SnmpError" in oiderror) {
+            oiderror.SnmpError = {"oids_walk": oiderror.SnmpError};
             if (reportError === 'log') {
                 console.error(JSON.stringify({...oiderror, "host": target}));
             } else {
