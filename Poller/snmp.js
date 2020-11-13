@@ -197,7 +197,7 @@ async function get_all(target, comm, options, oids, reportError) {
     return new Promise(async (resolve, reject) => {
         let session = snmp.createSession(target, comm, options);
         let _oids = Object.keys(oids);
-        let resp;
+        let resp = {};
         session.get(_oids, async (error, varbinds) => {
             if (error) {
                 resp = {"tag": {"SnmpError": {"oids_get": error}}};
