@@ -168,7 +168,7 @@ async function get_oids(target, comm, options, oids, reportError) {
     return new Promise((resolve) => {
         let session = snmp.createSession(target, comm, options);
         session.get(Object.keys(oids), (error, varbinds) => {
-            let resp = {};
+            let resp;
             if (error) {
                 resp = {"tag": {"SnmpError": {"inh_oids": error}}};
                 if (reportError === 'log') {
@@ -197,9 +197,7 @@ async function get_all(target, comm, options, oids, reportError) {
     return new Promise(async (resolve, reject) => {
         let session = snmp.createSession(target, comm, options);
         let _oids = Object.keys(oids);
-        let resp = {};
-        resp.tag = {};
-        resp.field = {};
+        let resp;
         session.get(_oids, async (error, varbinds) => {
             if (error) {
                 resp = {"tag": {"SnmpError": {"oids_get": error}}};
@@ -213,7 +211,7 @@ async function get_all(target, comm, options, oids, reportError) {
                         let mib = oids[vb.oid];
                         let type = "tag" in mib && mib.tag ? "tag" : "field";
                         let name = mib.name;
-                        resp[type][name] = await vb_transform(vb, mib);
+                        resp[type] = resp && type in resp ? {...resp[type], ...{[name]: await vb_transform(vb, mib)}} : {[type]: {[name]: await vb_transform(vb, mib)}}
                     }
                 }
             }
@@ -268,7 +266,8 @@ async function get_walk(target, comm, options, oids, TypeResponse, maxRepetition
             let value = await streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIterations).catch(error => {
                 oiderror.SnmpError = "SnmpError" in oiderror ? {...oiderror.SnmpError, ...{[oids[oid].name]: error.toString()}} : {[oids[oid].name]: error.toString()};
             });
-            resp[type] = {...resp[type], ...{[mib.name]: value}};
+            if (value)
+                resp[type] = {...resp[type], ...{[mib.name]: value}};
         }
         session.close();
     } catch (error) {
