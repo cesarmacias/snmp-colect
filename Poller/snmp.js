@@ -172,7 +172,7 @@ async function get_oids(target, comm, options, oids, reportError) {
             if (error) {
                 resp = {"tag": {"SnmpError": {"inh_oids": error}}};
                 if (reportError === 'log') {
-                    console.error(JSON.stringify(resp.tag));
+                    console.error(JSON.stringify({...resp.tag, "host": target}));
                     resp = undefined;
                 }
             } else {
@@ -202,9 +202,9 @@ async function get_all(target, comm, options, oids, reportError) {
         resp.field = {};
         session.get(_oids, async (error, varbinds) => {
             if (error) {
-                resp = {"tag": {"SnmpError": {"get_all": error}}};
+                resp = {"tag": {"SnmpError": {"oids_get": error}}};
                 if (reportError === 'log') {
-                    console.error(JSON.stringify(resp.tag));
+                    console.error(JSON.stringify({...resp.tag, "host": target}));
                     resp = undefined;
                 }
             } else {
@@ -280,7 +280,7 @@ async function get_walk(target, comm, options, oids, TypeResponse, maxRepetition
     } finally {
         if (oiderror && "SnmpError" in oiderror) {
             if (reportError === 'log') {
-                console.error(JSON.stringify(oiderror));
+                console.error(JSON.stringify({...oiderror, "host": target}));
             } else {
                 resp.tag = "tag" in resp ? {...resp.tag, ...oiderror} : oiderror;
             }
