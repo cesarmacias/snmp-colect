@@ -39,11 +39,11 @@ async function process_target(target, conf, inhObj) {
         for (const table of conf.table) {
             if ("options" in table) {
                 if (!("measurement" in table.options)) {
-                    console.error(new Error("no declarado measurement"));
+                    console.error(new func.CustomError('Config', 'No ha declarado measurement dentro de table'));
                     continue;
                 }
             } else {
-                console.error(new Error("no ha declarado options"));
+                console.error(new func.CustomError('Config', 'No ha declarado options dentro de table'));
                 continue;
             }
             const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.limit, conf.reportError);

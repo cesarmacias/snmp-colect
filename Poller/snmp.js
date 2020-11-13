@@ -115,13 +115,13 @@ async function read_config(file, inh, def) {
             let rawdat = fs.readFileSync(file, 'utf8');
             config = JSON.parse(rawdat);
         } catch (error) {
-            reject(func.CustomError('Config', error.toString()));
+            reject(new func.CustomError('Config', error.toString()));
         }
         inh.forEach((k) => {
-            if (!(k in config)) reject(func.CustomError('Config', k + 'is not defined'));
+            if (!(k in config)) reject(new func.CustomError('Config', k + 'is not defined'));
         });
         if ("oids_get" in config || "oids_walk" in config) {
-            if (!("measurement" in config)) reject(func.CustomError('Config', 'measurement is not defined'));
+            if (!("measurement" in config)) reject(new func.CustomError('Config', 'measurement is not defined'));
         }
         if ("options" in config)
             if ("version" in config.options)
