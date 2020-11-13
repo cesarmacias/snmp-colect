@@ -266,8 +266,8 @@ async function get_walk(target, comm, options, oids, TypeResponse, maxRepetition
             let value = await streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIterations).catch(error => {
                 oiderror.SnmpError = "SnmpError" in oiderror ? {...oiderror.SnmpError, ...{[oids[oid].name]: error.toString()}} : {[oids[oid].name]: error.toString()};
             });
-            if (value)
-                resp[type] = {...resp[type], ...{[mib.name]: value}};
+            if (value && typeof value === 'object')
+                resp[type] = resp && type in resp ? {...resp[type], ...{[mib.name]: value}} : {[mib.name]: value};
         }
         session.close();
     } catch (error) {
