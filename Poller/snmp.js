@@ -5,6 +5,7 @@ const snmp = require("net-snmp");
 const fs = require("fs");
 const async = require("async");
 const addr = require("ip-address");
+const func = require("./tools.js");
 
 /*
 Funcion para convetir el valor recibido en IPv4
@@ -107,28 +108,31 @@ async function feedCb(varbinds) {
 /*
 Funcion para leer la configuracion para el proceso de poleo snmp, fuente un archivo JSON
 */
-async function read_config(file, inh) {
+async function read_config(file, inh, def) {
     return new Promise((resolve, reject) => {
         let config;
         try {
             let rawdat = fs.readFileSync(file, 'utf8');
             config = JSON.parse(rawdat);
         } catch (error) {
-            reject(error);
+            reject(func.CustomError('Config', error.toString()));
         }
         inh.forEach((k) => {
-            if (!(k in config)) reject(new Error("Falta el parametro: " + k));
+            if (!(k in config)) reject(func.CustomError('Config', k + 'is not defined'));
         });
+        if ("oids_get" in config || "oids_walk" in config) {
+            if (!("measurement" in config)) reject(func.CustomError('Config', 'measurement is not defined'));
+        }
         if ("options" in config)
             if ("version" in config.options)
                 config.options.version = config.options.version === "1" ? snmp.Version1 : snmp.Version2c;
-        if (!("maxRepetitions" in config)) config.maxRepetitions = 20;
-        if (!("limit" in config)) config.limit = 1;
-        if (!("time" in config)) config.time = true;
-        if (!("ConLimit" in config)) config.ConLimit = 3000;
-        if (!("maxIterations" in config)) config.maxIterations = 5;
-        if (!("reportError" in config)) config.reportError = true;
-        if (!("community" in config)) config.community = "public";
+        if (func.isObject(def)) {
+            for (const key in def) {
+                if (def.hasOwnProperty(key)) {
+                    if (!(key in config)) config[key] = def[key];
+                }
+            }
+        }
         resolve(config);
     });
 }
@@ -166,7 +170,11 @@ async function get_oids(target, comm, options, oids, reportError) {
         session.get(Object.keys(oids), (error, varbinds) => {
             let resp = {};
             if (error) {
-                if (reportError) resolve({"tag": {"SnmpError": {"inh_oids": error}}});
+                resp = {"tag": {"SnmpError": {"inh_oids": error}}};
+                if (reportError === 'log') {
+                    console.error(JSON.stringify(resp.tag));
+                    resp = undefined;
+                }
             } else {
                 resp = varbinds.reduce((vbs, vb) => {
                     if (!(snmp.isVarbindError(vb))) {
@@ -194,9 +202,11 @@ async function get_all(target, comm, options, oids, reportError) {
         resp.field = {};
         session.get(_oids, async (error, varbinds) => {
             if (error) {
-                if (reportError) {
-                    resolve({"tag": {"SnmpError": {"get_all": error}}});
-                } else reject(error);
+                resp = {"tag": {"SnmpError": {"get_all": error}}};
+                if (reportError === 'log') {
+                    console.error(JSON.stringify(resp.tag));
+                    resp = undefined;
+                }
             } else {
                 for (const vb of varbinds) {
                     if (!(snmp.isVarbindError(vb))) {
@@ -206,9 +216,9 @@ async function get_all(target, comm, options, oids, reportError) {
                         resp[type][name] = await vb_transform(vb, mib);
                     }
                 }
-                resolve(resp);
             }
             session.close();
+            resolve(resp);
         });
     });
 }
@@ -248,29 +258,34 @@ function streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIt
 Funcion para obtener datos por snmpwalk
 */
 async function get_walk(target, comm, options, oids, TypeResponse, maxRepetitions, maxIterations, reportError) {
+    let resp = {};
+    let oiderror = {};
     try {
         const session = snmp.createSession(target, comm, options);
-        let resp = {};
         for await (const oid of Object.keys(oids)) {
             let mib = oids[oid];
             let type = "tag" in mib && mib.tag ? "tag" : "field";
             let value = await streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIterations).catch(error => {
-                if (reportError) {
-                    if ("tag" in resp)
-                        resp.tag.SnmpError = {...resp.tag.SnmpError, ...{[oids[oid].name]: error}};
-                    else {
-                        resp.tag = {SnmpError: {[oids[oid].name]: error}};
-                    }
-                }
+                oiderror.SnmpError = "SnmpError" in oiderror ? {...oiderror.SnmpError, ...{[oids[oid].name]: error.toString()}} : {[oids[oid].name]: error.toString()};
             });
             resp[type] = {...resp[type], ...{[mib.name]: value}};
         }
         session.close();
-        return resp;
     } catch (error) {
-        if (reportError) {
-            return {"tag": {"SnmpError": error}}
+        resp = {"tag": {"SnmpError": error}};
+        if (reportError === 'log') {
+            console.error(JSON.stringify(resp.tag));
+            resp = undefined;
         }
+    } finally {
+        if (oiderror && "SnmpError" in oiderror) {
+            if (reportError === 'log') {
+                console.error(JSON.stringify(oiderror));
+            } else {
+                resp.tag = "tag" in resp ? {...resp.tag, ...oiderror} : oiderror;
+            }
+        }
+        return resp;
     }
 }
 

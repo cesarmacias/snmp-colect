@@ -85,8 +85,17 @@ async function process_target(target, conf, inhObj) {
 
 async function start() {
     try {
-        let expect = ["hosts", "options", "measurement"];
-        let conf = await poller.read_config(args.config, expect);
+        const expect = ["hosts", "options"];
+        const defaultVal = {
+            "maxRepetitions": 20,
+            "limit": 1,
+            "time": true,
+            "ConLimit": 3000,
+            "maxIterations": 5,
+            "reportError": "log",
+            "community": "public"
+        };
+        let conf = await poller.read_config(args.config, expect, defaultVal);
         const ConLimit = conf.ConLimit;
         if (conf.time)
             conf.pollertime = Date.now() / 1000;
