@@ -62,8 +62,7 @@ async function process_target(target, conf, inhObj) {
         let obj = {
             "measurement_name": conf.measurement,
             "pollertime": conf.pollertime,
-            "tag": {"agent_host": target},
-            "field": {}
+            "tag": {"agent_host": target}
         };
         let get, walk;
         if ("oids_get" in conf)
@@ -87,11 +86,11 @@ async function start() {
     try {
         const expect = ["hosts", "options"];
         const defaultVal = {
-            "maxRepetitions": 20,
+            "maxRepetitions": 50,
             "limit": 1,
             "time": true,
             "ConLimit": 3000,
-            "maxIterations": 5,
+            "maxIterations": 20,
             "reportError": "log",
             "community": "public"
         };

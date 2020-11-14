@@ -246,8 +246,10 @@ function streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIt
         }, (error) => {
             if (error)
                 reject(error);
-            else
-                resolve(response);
+            else {
+                let resp = Object.keys(response).length > 0 ? response : undefined;
+                resolve(resp);
+            }
         });
     });
 }
