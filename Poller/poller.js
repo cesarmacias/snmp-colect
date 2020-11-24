@@ -94,7 +94,7 @@ async function start() {
             "reportError": "log",
             "community": "public"
         };
-        let conf = await poller.read_config(args.config, expect, defaultVal);
+        let conf = await poller.read_config(args.config, expect, defaultVal, true);
         const ConLimit = conf.ConLimit;
         if (conf.time)
             conf.pollertime = Date.now() / 1000;

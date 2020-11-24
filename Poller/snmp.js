@@ -36,7 +36,6 @@ async function addr_convert(value) {
         reject("Error Type");
     });
 }
-
 /*
 Funcion para tratar/modificar el valor recibido
 */
@@ -75,7 +74,37 @@ async function vb_transform(vb, oid) {
         resolve(resp);
     });
 }
-
+/*
+Funcion para leer la configuracion para el proceso de poleo snmp, fuente un archivo JSON
+*/
+async function read_config(file, inh, def, newConf) {
+    return new Promise((resolve, reject) => {
+        let config;
+        try {
+            let rawdat = fs.readFileSync(file, 'utf8');
+            config = JSON.parse(rawdat);
+        } catch (error) {
+            reject(new func.CustomError('Config', error.toString()));
+        }
+        inh.forEach((k) => {
+            if (!(k in config)) reject(new func.CustomError('Config', k + 'is not defined'));
+        });
+        if ( newConf && ("oids_get" in config || "oids_walk" in config)) {
+            if (!("measurement" in config)) reject(new func.CustomError('Config', 'measurement is not defined'));
+        }
+        if ("options" in config)
+            if ("version" in config.options)
+                config.options.version = config.options.version === "1" ? snmp.Version1 : snmp.Version2c;
+        if ( def && func.isObject(def)) {
+            for (const key in def) {
+                if (def.hasOwnProperty(key)) {
+                    if (!(key in config)) config[key] = def[key];
+                }
+            }
+        }
+        resolve(config);
+    });
+}
 /*
 Funcion para procesar los datos obtenidos de un snmpwalk a un dispositivo, los valores los asocia a "field" o "tag"
 */
@@ -104,39 +133,6 @@ async function feedCb(varbinds) {
             self.resp[index][type][self.mib.name] = value;
         }
 }
-
-/*
-Funcion para leer la configuracion para el proceso de poleo snmp, fuente un archivo JSON
-*/
-async function read_config(file, inh, def) {
-    return new Promise((resolve, reject) => {
-        let config;
-        try {
-            let rawdat = fs.readFileSync(file, 'utf8');
-            config = JSON.parse(rawdat);
-        } catch (error) {
-            reject(new func.CustomError('Config', error.toString()));
-        }
-        inh.forEach((k) => {
-            if (!(k in config)) reject(new func.CustomError('Config', k + 'is not defined'));
-        });
-        if ("oids_get" in config || "oids_walk" in config) {
-            if (!("measurement" in config)) reject(new func.CustomError('Config', 'measurement is not defined'));
-        }
-        if ("options" in config)
-            if ("version" in config.options)
-                config.options.version = config.options.version === "1" ? snmp.Version1 : snmp.Version2c;
-        if (func.isObject(def)) {
-            for (const key in def) {
-                if (def.hasOwnProperty(key)) {
-                    if (!(key in config)) config[key] = def[key];
-                }
-            }
-        }
-        resolve(config);
-    });
-}
-
 /*
 Funcion para obtener datos tipo tabla (indice compartido) por SNMP
 */
@@ -160,7 +156,6 @@ async function get_table(target, comm, options, oids, max, limit, reportError) {
         });
     });
 }
-
 /*
 Funcion para obtener datos snmpget para ser heredados en las tablas
 */
@@ -189,7 +184,6 @@ async function get_oids(target, comm, options, oids, reportError) {
         });
     });
 }
-
 /*
 Funcion para obtener varios datos por snmpget, desde un array de OIDS
 */
@@ -220,11 +214,9 @@ async function get_all(target, comm, options, oids, reportError) {
         });
     });
 }
-
 /*
 Funcion para que snmp.subtree trabaje con promesas
 */
-
 function streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIterations) {
     return new Promise(function (resolve, reject) {
         let i = 0;
@@ -242,7 +234,6 @@ function streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIt
                         response = {...response, [index]: value};
                     }
                 }
-
         }, (error) => {
             if (error)
                 reject(error);
@@ -253,7 +244,6 @@ function streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIt
         });
     });
 }
-
 /*
 Funcion para obtener datos por snmpwalk
 */
@@ -290,7 +280,6 @@ async function get_walk(target, comm, options, oids, TypeResponse, maxRepetition
         return resp;
     }
 }
-
 /*
 Funciones a Exportar
 */
