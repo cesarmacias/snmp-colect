@@ -30,11 +30,11 @@ async function process_target(target, comm, opt, oids, vendorList, mac, maxRepet
         let get = {};
         let walk = {};
         let obj = {};
-        if ("get" in oids) {
+        if ("get" in oids && oids.get) {
             let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.get) : oids.get;
             get = await poller.get_all(target, comm, opt, filterOids);
         }
-        if ("walk" in oids) {
+        if ("walk" in oids && oids.walk) {
             let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.walk) : oids.walk;
             walk = await poller.get_walk(target, comm, opt, filterOids, "array", maxRepetitions, maxIterations);
         }
