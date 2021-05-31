@@ -56,3 +56,7 @@ Version 1.2:
 Requests:
 - list of hosts can be a SQL to database
 - list of hosts can be stdin (to execute from result of another script)
+
+# Diagram of Use
+
+![Alt](Diagram.svg)
