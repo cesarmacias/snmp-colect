@@ -1,25 +1,19 @@
 {
   "name": "snmp-colect",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Colect SNMP data from any devices with OID in json config file",
   "main": "Poller/poller.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
   "author": "Cesar Macias Duarte",
   "license": "ISC",
   "dependencies": {
     "async": "^3.2.0",
     "fs": "0.0.1-security",
     "ip-address": "^6.4.0",
+    "mariadb": "^2.5.4",
     "minimist": "^1.2.5",
-    "mysql": "^2.18.1",
-    "net-snmp": "^2.9.5",
+    "net-snmp": "^2.10.1",
+    "pg": "^8.6.0",
     "readline": "^1.3.0",
     "throat": "^5.0.0"
-  },
-  "devDependencies": {
-    "mysql2": "^2.2.5"
   }
 }
