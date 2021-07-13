@@ -4,7 +4,6 @@
 
 const snmp = require("net-snmp");
 const fs = require("fs");
-const async = require("async");
 const addr = require("ip-address");
 const func = require("./tools.js");
 
@@ -33,7 +32,6 @@ async function addr_convert(value) {
 		} else throw new Error("Not IPv4");
 	}
 	throw new Error("Error Type");
-
 }
 /*
 Funcion para tratar/modificar el valor recibido
@@ -92,7 +90,7 @@ async function read_config(file, inh, def, newConf) {
 	if ("options" in config)
 		if ("version" in config.options)
 			config.options.version =
-          config.options.version === "1" ? snmp.Version1 : snmp.Version2c;
+            config.options.version === "1" ? snmp.Version1 : snmp.Version2c;
 	if (def && func.isObject(def)) {
 		for (const key in def) {
 			if (Object.prototype.hasOwnProperty.call(def, key)) {
@@ -115,9 +113,9 @@ async function feedCb(varbinds) {
 			let value, type;
 			if (varbinds[i].type === snmp.ObjectType.OctetString) {
 				value =
-          "type" in self.mib && self.mib.type === "hex" ?
-          	varbinds[i].value.toString("hex") :
-          	varbinds[i].value.toString();
+                    "type" in self.mib && self.mib.type === "hex" ?
+                    	varbinds[i].value.toString("hex") :
+                    	varbinds[i].value.toString();
 			} else if (varbinds[i].type === snmp.ObjectType.Counter64) {
 				value = 0;
 				for (let x of varbinds[i].value.values()) {
@@ -136,63 +134,99 @@ async function feedCb(varbinds) {
 }
 /*
 Funcion para obtener datos tipo tabla (indice compartido) por SNMP
-*/
-async function get_table(target, comm, options, oids, max, limit, reportError) {
-	let obj = {};
-	let session = snmp.createSession(target, comm, options);
-	async.eachLimit(
-		oids,
-		limit,
-		(oid, callback) => {
-			session.subtree(
-				oid.oid,
-				max,
-				feedCb.bind({ mib: oid, resp: obj }),
-				(error) => {
-					if (error)
-						if (reportError)
-							console.error(
-								"table|" + target + "|" + oid.oid + "|" + error.toString()
-							);
-					callback();
-				}
-			);
-		},
-		function (error) {
+
+async function table(target, comm, options, oids, max, limit) {
+	return new Promise((resolve, reject) => {
+		let obj = {};
+		let session = snmp.createSession(target, comm, options);
+		async.eachLimit(oids, limit, (oid, callback) => {
+			session.subtree(oid.oid, max, feedCb.bind({
+				mib: oid,
+				resp: obj
+			}), (error) => {
+				if (error)
+					console.error("table|" + target + "|" + oid.oid + "|" + error.toString());
+				callback();
+			});
+		}, function (error) {
 			session.close();
 			if (error) {
-				if (reportError) console.error(error.toString());
-				throw new Error("SNMP error host: " + target);
+				console.error(error.toString());
+				reject(new Error("SNMP error host: " + target));
 			}
-			return obj;
-		}
-	);
+			resolve(obj);
+		});
+	});
+}
+*/
+async function get_table(target, comm, options, oids, max) {
+	const session = snmp.createSession(target, comm, options);
+	let obj = {};
+	for (const oid of oids) {
+		await (function () {
+			return new Promise((resolve) => {
+				session.subtree(oid.oid, max, feedCb.bind({
+					mib: oid,
+					resp: obj
+				}), (error) => {
+					if (error) {
+						let err = {
+							tag: {
+								SnmpError: {
+									inh_oids: error,
+								},
+							},
+							host: target
+						};
+						console.error(JSON.stringify(err));
+
+					}
+					resolve(obj);
+				});
+			});
+		})();
+	}
+	session.close();
+	return obj;
 }
 /*
 Funcion para obtener datos snmpget para ser heredados en las tablas
 */
 async function get_oids(target, comm, options, oids, reportError) {
-	let session = snmp.createSession(target, comm, options);
-	session.get(Object.keys(oids), (error, varbinds) => {
-		let resp;
-		if (error) {
-			resp = { tag: { SnmpError: { inh_oids: error } } };
-			if (reportError === "log") {
-				console.error(JSON.stringify({ ...resp.tag, host: target }));
-				resp = undefined;
-			}
-		} else {
-			resp = varbinds.reduce((vbs, vb) => {
-				if (!snmp.isVarbindError(vb)) {
-					vbs[oids[vb.oid]] = vb.value;
-					if (vb.type === snmp.ObjectType.OctetString)
-						vbs[oids[vb.oid]] = vb.value.toString();
+	return new Promise((resolve) => {
+		let session = snmp.createSession(target, comm, options);
+		session.get(Object.keys(oids), (error, varbinds) => {
+			let resp;
+			if (error) {
+				resp = {
+					tag: {
+						SnmpError: {
+							inh_oids: error,
+						},
+					},
+				};
+				if (reportError === "log") {
+					console.error(
+						JSON.stringify({
+							...resp.tag,
+							host: target,
+						})
+					);
+					resp = undefined;
 				}
-				return vbs;
-			}, {});
-		}
-		session.close();
-		return resp;
+			} else {
+				resp = varbinds.reduce((vbs, vb) => {
+					if (!snmp.isVarbindError(vb)) {
+						vbs[oids[vb.oid]] = vb.value;
+						if (vb.type === snmp.ObjectType.OctetString)
+							vbs[oids[vb.oid]] = vb.value.toString();
+					}
+					return vbs;
+				}, {});
+			}
+			session.close();
+			resolve(resp);
+		});
 	});
 }
 /*
@@ -205,9 +239,20 @@ function get_all(target, comm, options, oids, reportError) {
 		let resp = {};
 		session.get(_oids, async (error, varbinds) => {
 			if (error) {
-				resp = { tag: { SnmpError: { oids_get: error } } };
+				resp = {
+					tag: {
+						SnmpError: {
+							oids_get: error,
+						},
+					},
+				};
 				if (reportError === "log") {
-					console.error(JSON.stringify({ ...resp.tag, host: target }));
+					console.error(
+						JSON.stringify({
+							...resp.tag,
+							host: target,
+						})
+					);
 					resp = undefined;
 				}
 			} else {
@@ -217,9 +262,16 @@ function get_all(target, comm, options, oids, reportError) {
 						let type = "tag" in mib && mib.tag ? "tag" : "field";
 						let name = mib.name;
 						resp[type] =
-              resp && type in resp ?
-              	{ ...resp[type], ...{ [name]: await vb_transform(vb, mib) } } :
-              	{ [type]: { [name]: await vb_transform(vb, mib) } };
+                            resp && type in resp ? {
+                            	...resp[type],
+                            	...{
+                            		[name]: await vb_transform(vb, mib),
+                            	},
+                            } : {
+                            	[type]: {
+                            		[name]: await vb_transform(vb, mib),
+                            	},
+                            };
 					}
 				}
 			}
@@ -231,40 +283,34 @@ function get_all(target, comm, options, oids, reportError) {
 /*
 Funcion para que snmp.subtree trabaje con promesas
 */
-async function streePromisified(
-	session,
-	oid,
-	maxRepetitions,
-	mib,
-	TypeResponse,
-	maxIterations
-) {
-	let i = 0;
-	let response = TypeResponse === "array" ? [] : {};
-	session.subtree(
-		oid,
-		maxRepetitions,
-		async (varbinds) => {
+function streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIterations) {
+	return new Promise(function (resolve, reject) {
+		let i = 0;
+		let response = TypeResponse === "array" ? [] : {};
+		session.subtree(oid, maxRepetitions, async (varbinds) => {
 			if (maxIterations && i++ > maxIterations)
-				throw new Error("maxIterations reached");
+				reject("maxIterations reached");
 			for (let vb of varbinds)
 				if (!snmp.isVarbindError(vb)) {
 					let value = await vb_transform(vb, mib);
-					if (TypeResponse === "array") response.push(value);
+					if (TypeResponse === "array")
+						response.push(value);
 					else {
 						let index = vb.oid.substring(oid.length + 1);
-						response = { ...response, [index]: value };
+						response = {
+							...response,
+							[index]: value
+						};
 					}
 				}
-		},
-		(error) => {
-			if (error) throw new Error(error);
-			else {
-				let resp = Object.keys(response).length > 0 ? response : undefined;
-				return resp;
-			}
-		}
-	);
+
+		}, (error) => {
+			if (error)
+				reject(error);
+			else
+				resolve(response);
+		});
+	});
 }
 /*
 Funcion para obtener datos por snmpwalk
@@ -295,33 +341,56 @@ async function get_walk(
 				maxIterations
 			).catch((error) => {
 				oiderror.SnmpError =
-          "SnmpError" in oiderror ?
-          	{
-          		...oiderror.SnmpError,
-          		...{ [oids[oid].name]: error.toString() },
-          	} :
-          	{ [oids[oid].name]: error.toString() };
+                    "SnmpError" in oiderror ? {
+                    	...oiderror.SnmpError,
+                    	...{
+                    		[oids[oid].name]: error.toString(),
+                    	},
+                    } : {
+                    	[oids[oid].name]: error.toString(),
+                    };
 			});
 			if (value && typeof value === "object")
 				resp[type] =
-          resp && type in resp ?
-          	{ ...resp[type], ...{ [mib.name]: value } } :
-          	{ [mib.name]: value };
+                resp && type in resp ? {
+                	...resp[type],
+                	...{
+                		[mib.name]: value,
+                	},
+                } : {
+                	[mib.name]: value,
+                };
 		}
 		session.close();
 	} catch (error) {
-		resp = { tag: { SnmpError: error } };
+		resp = {
+			tag: {
+				SnmpError: error,
+			},
+		};
 		if (reportError === "log") {
 			console.error(JSON.stringify(resp.tag));
 			resp = undefined;
 		}
 	} finally {
 		if (oiderror && "SnmpError" in oiderror) {
-			oiderror.SnmpError = { oids_walk: oiderror.SnmpError };
+			oiderror.SnmpError = {
+				oids_walk: oiderror.SnmpError,
+			};
 			if (reportError === "log") {
-				console.error(JSON.stringify({ ...oiderror, host: target }));
+				console.error(
+					JSON.stringify({
+						...oiderror,
+						host: target,
+					})
+				);
 			} else {
-				resp.tag = "tag" in resp ? { ...resp.tag, ...oiderror } : oiderror;
+				resp.tag =
+                    "tag" in resp ? {
+                    	...resp.tag,
+                    	...oiderror,
+                    } :
+                    	oiderror;
 			}
 		}
 		return resp;
