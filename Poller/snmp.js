@@ -198,32 +198,34 @@ async function get_oids(target, comm, options, oids, reportError) {
 /*
 Funcion para obtener varios datos por snmpget, desde un array de OIDS
 */
-async function get_all(target, comm, options, oids, reportError) {
-	let session = snmp.createSession(target, comm, options);
-	let _oids = Object.keys(oids);
-	let resp = {};
-	session.get(_oids, async (error, varbinds) => {
-		if (error) {
-			resp = { tag: { SnmpError: { oids_get: error } } };
-			if (reportError === "log") {
-				console.error(JSON.stringify({ ...resp.tag, host: target }));
-				resp = undefined;
-			}
-		} else {
-			for (const vb of varbinds) {
-				if (!snmp.isVarbindError(vb)) {
-					let mib = oids[vb.oid];
-					let type = "tag" in mib && mib.tag ? "tag" : "field";
-					let name = mib.name;
-					resp[type] =
+function get_all(target, comm, options, oids, reportError) {
+	return new Promise((resolve) => {
+		let session = snmp.createSession(target, comm, options);
+		let _oids = Object.keys(oids);
+		let resp = {};
+		session.get(_oids, async (error, varbinds) => {
+			if (error) {
+				resp = { tag: { SnmpError: { oids_get: error } } };
+				if (reportError === "log") {
+					console.error(JSON.stringify({ ...resp.tag, host: target }));
+					resp = undefined;
+				}
+			} else {
+				for (const vb of varbinds) {
+					if (!snmp.isVarbindError(vb)) {
+						let mib = oids[vb.oid];
+						let type = "tag" in mib && mib.tag ? "tag" : "field";
+						let name = mib.name;
+						resp[type] =
               resp && type in resp ?
               	{ ...resp[type], ...{ [name]: await vb_transform(vb, mib) } } :
               	{ [type]: { [name]: await vb_transform(vb, mib) } };
+					}
 				}
 			}
-		}
-		session.close();
-		return resp;
+			session.close();
+			resolve(resp);
+		});
 	});
 }
 /*
