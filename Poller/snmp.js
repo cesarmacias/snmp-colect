@@ -134,30 +134,6 @@ async function feedCb(varbinds) {
 }
 /*
 Funcion para obtener datos tipo tabla (indice compartido) por SNMP
-
-async function table(target, comm, options, oids, max, limit) {
-	return new Promise((resolve, reject) => {
-		let obj = {};
-		let session = snmp.createSession(target, comm, options);
-		async.eachLimit(oids, limit, (oid, callback) => {
-			session.subtree(oid.oid, max, feedCb.bind({
-				mib: oid,
-				resp: obj
-			}), (error) => {
-				if (error)
-					console.error("table|" + target + "|" + oid.oid + "|" + error.toString());
-				callback();
-			});
-		}, function (error) {
-			session.close();
-			if (error) {
-				console.error(error.toString());
-				reject(new Error("SNMP error host: " + target));
-			}
-			resolve(obj);
-		});
-	});
-}
 */
 async function get_table(target, comm, options, oids, max) {
 	const session = snmp.createSession(target, comm, options);
