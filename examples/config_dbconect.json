@@ -1,0 +1,128 @@
+{
+    "hosts": {
+      "type": "pg",
+      "dbOpt": {
+        "user": "dbuser",
+        "host": "localhost",
+        "password": "dbpassword",
+        "port": 5432,
+        "database": "db_test"
+      },
+      "sql": "SELECT t.ip, t.mac as \"tag.mac\", t.nodo as \"tag.nodo\", t.cmts as \"tag.cmts\", t.id as \"tag.fuente\" FROM public.hfc_tp t WHERE t.tipo = 'fuente'",
+      "ipField": "ip"
+    },
+    "community": "public",
+    "maxIterations": 5,
+    "ConLimit": 500,
+    "measurement": "poll_tp",
+    "options": {
+      "version": "2c",
+      "retries": 3,
+      "timeout": 2000,
+      "port": 161,
+      "backoff": 2,
+      "backwardsGetNexts": false
+    },
+    "oids_get": {
+      "1.3.6.1.2.1.10.127.1.2.2.1.5.2": {
+        "name": "CmStatusLostSyncs"
+      },
+      "1.3.6.1.2.1.10.127.1.2.2.1.3.2": {
+        "name": "CmStatusTxPower"
+      },
+      "1.3.6.1.2.1.10.127.1.1.1.1.6.3": {
+        "name": "DownChannelPower"
+      },
+      "1.3.6.1.2.1.1.1.0": {
+        "name": "sysDescr",
+        "type": "regex",
+        "regex": "VENDOR:\\s([\\w|\\.|\\s|,|-]+);\\sBOOTR:\\s[\\w|\\.|\\s|,|-]+;\\sSW_REV:\\s([\\w|\\.|\\s|,|-]+);\\sMODEL:\\s([\\w|\\.|\\s|,|-]+)",
+        "map": ["Vendor", "Firmware", "Model"],
+        "tag": true
+      },
+      "1.3.6.1.2.1.10.127.1.2.2.1.4.2": {
+        "name": "CmStatusResets"
+      },
+      "1.3.6.1.2.1.10.127.1.1.4.1.8.3": {
+        "name": "SigQExtUnerroreds"
+      },
+      "1.3.6.1.2.1.10.127.1.1.4.1.9.3": {
+        "name": "SigQExtCorrecteds"
+      },
+      "1.3.6.1.2.1.10.127.1.1.4.1.10.3": {
+        "name": "SigQExtUncorrectables"
+      },
+      "1.3.6.1.2.1.10.127.1.1.4.1.5.3": {
+        "name": "SigQSignalNoise"
+      },
+      "1.3.6.1.2.1.1.3.0": {
+        "name": "SysUptime"
+      },
+      "1.3.6.1.2.1.10.127.1.2.2.1.14.2": {
+        "name": "CmStatusRangingAborteds"
+      },
+      "1.3.6.1.4.1.5591.1.4.2.1.27.1": {
+        "name": "psTamper",
+        "tag": true
+      },
+      "1.3.6.1.4.1.5591.1.4.2.1.28.1": {
+        "name": "psBatteryVoltage"
+      },
+      "1.3.6.1.4.1.5591.1.4.4.1.4.1.1.1": {
+        "name": "psBatteryVoltage01"
+      },
+      "1.3.6.1.4.1.5591.1.4.4.1.4.1.1.2": {
+        "name": "psBatteryVoltage02"
+      },
+      "1.3.6.1.4.1.5591.1.4.4.1.4.1.1.3": {
+        "name": "psBatteryVoltage03"
+      },
+      "1.3.6.1.4.1.5591.1.4.2.1.5.1": {
+        "name": "psBatteries",
+        "tag": true
+      },
+      "1.3.6.1.4.1.5591.1.4.2.1.24.1": {
+        "name": "psInverterStatus",
+        "tag": true
+      },
+      "1.3.6.1.4.1.5591.1.4.6.1.3.1.1": {
+        "name": "psTemperature"
+      },
+      "1.3.6.1.4.1.5591.1.4.2.1.23.1": {
+        "name": "psInputVoltage",
+        "tag": true
+      },
+      "1.3.6.1.4.1.5591.1.4.2.1.25.1": {
+        "name": "psMajorAlarm"
+      },
+      "1.3.6.1.4.1.926.1.3.2.6.1.0": {
+        "name": "tamperPolarity",
+        "tag": true
+      },
+      "1.3.6.1.4.1.5591.1.3.1.5.0": {
+        "name": "psSoftwareVersion"
+      },
+      "1.3.6.1.4.1.926.1.2.1.2.1.5.12.1.4": {
+        "name": "psInputCurrent"
+      },
+      "1.3.6.1.4.1.5591.1.4.5.1.3.1.1": {
+        "name": "psDPMCurrentIn",
+        "tag": true
+      },
+      "1.3.6.1.2.1.1.5.0": {
+        "name": "sysName",
+        "tag": true
+      },
+      "1.3.6.1.2.1.2.2.1.6.2": {
+        "name": "ifMac",
+        "tag": true,
+        "type": "hex"
+      },
+      "1.3.6.1.2.1.2.2.1.14.2": {
+        "name": "ifInErrors"
+      },
+      "1.3.6.1.2.1.2.2.1.20.2": {
+        "name": "ifOutErrors"
+      }
+    }
+  }
