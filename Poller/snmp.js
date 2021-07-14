@@ -90,7 +90,7 @@ async function read_config(file, inh, def, newConf) {
 	if ("options" in config)
 		if ("version" in config.options)
 			config.options.version =
-            config.options.version === "1" ? snmp.Version1 : snmp.Version2c;
+			config.options.version === "1" ? snmp.Version1 : snmp.Version2c;
 	if (def && func.isObject(def)) {
 		for (const key in def) {
 			if (Object.prototype.hasOwnProperty.call(def, key)) {
@@ -113,9 +113,9 @@ async function feedCb(varbinds) {
 			let value, type;
 			if (varbinds[i].type === snmp.ObjectType.OctetString) {
 				value =
-                    "type" in self.mib && self.mib.type === "hex" ?
-                    	varbinds[i].value.toString("hex") :
-                    	varbinds[i].value.toString();
+					"type" in self.mib && self.mib.type === "hex" ?
+						varbinds[i].value.toString("hex") :
+						varbinds[i].value.toString();
 			} else if (varbinds[i].type === snmp.ObjectType.Counter64) {
 				value = 0;
 				for (let x of varbinds[i].value.values()) {
@@ -237,17 +237,14 @@ function get_all(target, comm, options, oids, reportError) {
 						let mib = oids[vb.oid];
 						let type = "tag" in mib && mib.tag ? "tag" : "field";
 						let name = mib.name;
-						resp[type] =
-                            resp && type in resp ? {
-                            	...resp[type],
-                            	...{
-                            		[name]: await vb_transform(vb, mib),
-                            	},
-                            } : {
-                            	[type]: {
-                            		[name]: await vb_transform(vb, mib),
-                            	},
-                            };
+						resp[type] = resp && type in resp ? {
+							...resp[type],
+							...{
+								[name]: await vb_transform(vb, mib)
+							}
+						} : {
+							[name]: await vb_transform(vb, mib)
+						};
 					}
 				}
 			}
@@ -317,25 +314,25 @@ async function get_walk(
 				maxIterations
 			).catch((error) => {
 				oiderror.SnmpError =
-                    "SnmpError" in oiderror ? {
-                    	...oiderror.SnmpError,
-                    	...{
-                    		[oids[oid].name]: error.toString(),
-                    	},
-                    } : {
-                    	[oids[oid].name]: error.toString(),
-                    };
+					"SnmpError" in oiderror ? {
+						...oiderror.SnmpError,
+						...{
+							[oids[oid].name]: error.toString(),
+						},
+					} : {
+						[oids[oid].name]: error.toString(),
+					};
 			});
 			if (value && typeof value === "object")
 				resp[type] =
-                resp && type in resp ? {
-                	...resp[type],
-                	...{
-                		[mib.name]: value,
-                	},
-                } : {
-                	[mib.name]: value,
-                };
+				resp && type in resp ? {
+					...resp[type],
+					...{
+						[mib.name]: value,
+					},
+				} : {
+					[mib.name]: value,
+				};
 		}
 		session.close();
 	} catch (error) {
@@ -362,11 +359,11 @@ async function get_walk(
 				);
 			} else {
 				resp.tag =
-                    "tag" in resp ? {
-                    	...resp.tag,
-                    	...oiderror,
-                    } :
-                    	oiderror;
+					"tag" in resp ? {
+						...resp.tag,
+						...oiderror,
+					} :
+						oiderror;
 			}
 		}
 		return resp;
