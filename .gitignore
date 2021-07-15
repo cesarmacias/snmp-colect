@@ -1,9 +1,5 @@
 # Project exclude paths
-/node_modules/
-/config/
-.idea/misc.xml
-.idea/modules.xml
-.idea/snmp-colect.iml
-.idea/vcs.xml
-.idea/workspace.xml
-/test/
+node_modules/
+config/
+.idea/
+test/
