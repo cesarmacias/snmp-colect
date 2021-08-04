@@ -5,7 +5,7 @@
 Funcion para validar si una variable es un objeto
  */
 function isObject(a) {
-	return (!!a) && (a.constructor === Object);
+	return !!a && a.constructor === Object;
 }
 /*
 Funcion para expandir un objeto en formato "."
@@ -13,7 +13,8 @@ Funcion para expandir un objeto en formato "."
 function parseDotNotation(str, val, obj) {
 	let currentObj = obj,
 		keys = str.split("."),
-		i, l = Math.max(1, keys.length - 1),
+		i,
+		l = Math.max(1, keys.length - 1),
 		key;
 
 	for (i = 0; i < l; ++i) {
@@ -47,6 +48,21 @@ class CustomError extends Error {
 		this.name = ErrorName;
 	}
 }
+/*
+	Function to get value of object sending in dot notation
+ */
+function get_ObjValue(obj, str) {
+	let arr = str.split(".");
+	let resp = obj;
+	for (let key of arr) {
+		if (key in resp) {
+			resp = resp[key];
+		} else {
+			return undefined;
+		}
+	}
+	return resp;
+}
 
 /*
 Funciones a Exportar
@@ -54,5 +70,6 @@ Funciones a Exportar
 module.exports = {
 	CustomError,
 	isObject,
-	ObjExpand
+	ObjExpand,
+	get_ObjValue
 };

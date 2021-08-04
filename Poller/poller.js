@@ -174,7 +174,7 @@ async function start() {
 			} else throw new func.CustomError("DbConfig", "Type of DB is not allowed");
 			if (data.length > 0) {
 				Promise.all(data.map(throat(ConLimit, async (doc) => {
-					let target = doc[conf.hosts.ipField];
+					let target = func.get_ObjValue(doc,conf.hosts.ipField);
 					if (typeof target === "string") {
 						let ipv4 = new addr.Address4(target);
 						if (ipv4.isValid()) {
