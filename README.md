@@ -71,6 +71,16 @@ Version 1.3.0:
 - update modules
 - remove async module, use async/await and promisses
 
+Version 1.3.1
+
+- minor release, correct bug of first field with prefix (field or tag) duplicated
+
+Version 1.3.2
+
+- update npm modules
+- correct bugs:
+  - ipiterate in database read if is in dot notation
+
 Requests:
 
 - unify poller.js and poller-cm.js

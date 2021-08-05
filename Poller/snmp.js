@@ -149,10 +149,12 @@ async function get_table(target, comm, options, oids, max) {
 						let err = {
 							tag: {
 								SnmpError: {
-									inh_oids: error,
-								},
-							},
-							host: target
+									error: error.name,
+									host: target,
+									oid: oid.oid,
+									type: "table"
+								}
+							}
 						};
 						console.error(JSON.stringify(err));
 
@@ -177,9 +179,13 @@ async function get_oids(target, comm, options, oids, reportError) {
 				resp = {
 					tag: {
 						SnmpError: {
-							inh_oids: error,
-						},
-					},
+							error: error.name,
+							host: target,
+							varbinds: varbinds,
+							oids: Object.keys(oids),
+							type: "inh"
+						}
+					}
 				};
 				if (reportError === "log") {
 					console.error(
