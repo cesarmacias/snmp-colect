@@ -157,7 +157,6 @@ async function get_table(target, comm, options, oids, max) {
 							}
 						};
 						console.error(JSON.stringify(err));
-
 					}
 					resolve(obj);
 				});
@@ -173,7 +172,8 @@ Funcion para obtener datos snmpget para ser heredados en las tablas
 async function get_oids(target, comm, options, oids, reportError) {
 	return new Promise((resolve) => {
 		let session = snmp.createSession(target, comm, options);
-		session.get(Object.keys(oids), (error, varbinds) => {
+		let _oids = Object.keys(oids);
+		session.get(_oids, (error, varbinds) => {
 			let resp;
 			if (error) {
 				resp = {
@@ -181,19 +181,13 @@ async function get_oids(target, comm, options, oids, reportError) {
 						SnmpError: {
 							error: error.name,
 							host: target,
-							varbinds: varbinds,
-							oids: Object.keys(oids),
+							oids: _oids,
 							type: "inh"
 						}
 					}
 				};
 				if (reportError === "log") {
-					console.error(
-						JSON.stringify({
-							...resp.tag,
-							host: target,
-						})
-					);
+					console.error(JSON.stringify(resp));
 					resp = undefined;
 				}
 			} else {
@@ -224,17 +218,15 @@ function get_all(target, comm, options, oids, reportError) {
 				resp = {
 					tag: {
 						SnmpError: {
-							oids_get: error,
-						},
-					},
+							error: error.name,
+							host: target,
+							oids: _oids,
+							type: "get"
+						}
+					}
 				};
 				if (reportError === "log") {
-					console.error(
-						JSON.stringify({
-							...resp.tag,
-							host: target,
-						})
-					);
+					console.error(JSON.stringify(resp));
 					resp = undefined;
 				}
 			} else {
