@@ -368,6 +368,24 @@ async function get_walk(
 	}
 }
 /*
+	Test SNMP
+*/
+async function snmp_test(target, comm, options){
+	options.timeout = 500;
+	let mib = {"1": {"name": "test"}};
+	const session = snmp.createSession(target, comm, options);
+	return await streePromisified(
+		session,
+		"1",
+		1,
+		mib,
+		"array",
+		1
+	).catch((error) => {
+		console.error(error);
+	});
+}
+/*
 Funciones a Exportar
 */
 module.exports = {
@@ -376,4 +394,5 @@ module.exports = {
 	get_all,
 	read_config,
 	get_walk,
+	snmp_test
 };

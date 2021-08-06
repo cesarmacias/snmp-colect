@@ -36,6 +36,8 @@ function print_ndjson(doc, inh, inhObj) {
 }
 
 async function process_target(target, conf, inhObj) {
+	let test = await poller.snmp_test(target, conf.community, conf.options);
+	console.log(test);
 	const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids, conf.reportError) : false;
 	let result = [];
 	if ("table" in conf) {
