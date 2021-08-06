@@ -85,7 +85,7 @@ async function process_target(target, conf, inhObj) {
 		}
 		return result;
 	} else {
-		console.error(new func.CustomError("SNMP", "no responde: " + target));
+		console.error("SNMP_RequestTimedOut:" + target);
 	}
 }
 
