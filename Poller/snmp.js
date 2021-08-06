@@ -375,14 +375,7 @@ async function snmp_test(target, comm, options){
 	let mib = {"1": {"name": "test"}};
 	const session = snmp.createSession(target, comm, options);
 	let message;
-	await streePromisified(
-		session,
-		"1",
-		1,
-		mib,
-		"array",
-		1
-	).catch((error) => {
+	await streePromisified(session, "1", 1, mib, "array", 1).catch((error) => {
 		message = error.toString();
 	});
 	session.close();

@@ -36,55 +36,57 @@ function print_ndjson(doc, inh, inhObj) {
 }
 
 async function process_target(target, conf, inhObj) {
-	let test = await poller.snmp_test(target, conf.community, conf.options);
-	console.log(test + ":" + target);
-	const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids, conf.reportError) : false;
-	let result = [];
-	if ("table" in conf) {
-		for (const table of conf.table) {
-			if ("options" in table) {
-				if (!("measurement" in table.options)) {
-					console.error(new func.CustomError("Config", "No ha declarado measurement dentro de table"));
+	if (await poller.snmp_test(target, conf.community, conf.options)){
+		const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids, conf.reportError) : false;
+		let result = [];
+		if ("table" in conf) {
+			for (const table of conf.table) {
+				if ("options" in table) {
+					if (!("measurement" in table.options)) {
+						console.error(new func.CustomError("Config", "No ha declarado measurement dentro de table"));
+						continue;
+					}
+				} else {
+					console.error(new func.CustomError("Config", "No ha declarado options dentro de table"));
 					continue;
 				}
-			} else {
-				console.error(new func.CustomError("Config", "No ha declarado options dentro de table"));
-				continue;
-			}
-			const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.limit, conf.reportError);
-			for (let k in part) {
-				let doc = part[k];
-				if ("index" in table.options && table.options.index) doc.tag.index = k;
-				if ("pollertime" in conf) doc.pollertime = conf.pollertime;
-				doc.tag.agent_host = target;
-				doc.measurement_name = table.options.measurement;
-				let collected = print_ndjson(doc, inh, inhObj);
-				result.push(collected);
+				const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.limit, conf.reportError);
+				for (let k in part) {
+					let doc = part[k];
+					if ("index" in table.options && table.options.index) doc.tag.index = k;
+					if ("pollertime" in conf) doc.pollertime = conf.pollertime;
+					doc.tag.agent_host = target;
+					doc.measurement_name = table.options.measurement;
+					let collected = print_ndjson(doc, inh, inhObj);
+					result.push(collected);
+				}
 			}
 		}
-	}
-	if ("oids_get" in conf || "oids_walk" in conf) {
-		let obj = {
-			"measurement_name": conf.measurement,
-			"pollertime": conf.pollertime,
-			"tag": {"agent_host": target}
-		};
-		let get, walk;
-		if ("oids_get" in conf)
-			get = await poller.get_all(target, conf.community, conf.options, conf.oids_get, conf.reportError);
-		if ("oids_walk" in conf)
-			walk = await poller.get_walk(target, conf.community, conf.options, conf.oids_walk, "array", conf.maxRepetitions, conf.maxIterations, conf.reportError);
-		for (let k of ["tag", "field"]) {
-			if (get && k in get) {
-				obj[k] = walk && k in walk ? {...obj[k], ...get[k], ...walk[k]} : {...obj[k], ...get[k]};
-			} else {
-				obj[k] = walk && k in walk ? {...obj[k], ...walk[k]} : obj[k];
+		if ("oids_get" in conf || "oids_walk" in conf) {
+			let obj = {
+				"measurement_name": conf.measurement,
+				"pollertime": conf.pollertime,
+				"tag": {"agent_host": target}
+			};
+			let get, walk;
+			if ("oids_get" in conf)
+				get = await poller.get_all(target, conf.community, conf.options, conf.oids_get, conf.reportError);
+			if ("oids_walk" in conf)
+				walk = await poller.get_walk(target, conf.community, conf.options, conf.oids_walk, "array", conf.maxRepetitions, conf.maxIterations, conf.reportError);
+			for (let k of ["tag", "field"]) {
+				if (get && k in get) {
+					obj[k] = walk && k in walk ? {...obj[k], ...get[k], ...walk[k]} : {...obj[k], ...get[k]};
+				} else {
+					obj[k] = walk && k in walk ? {...obj[k], ...walk[k]} : obj[k];
+				}
 			}
+			let collected = print_ndjson(obj, inh, inhObj);
+			result.push(collected);
 		}
-		let collected = print_ndjson(obj, inh, inhObj);
-		result.push(collected);
+		return result;
+	} else {
+		console.error(new func.CustomError("SNMP", "no responde: " + target));
 	}
-	return result;
 }
 
 async function start() {
