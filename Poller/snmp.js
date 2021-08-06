@@ -372,6 +372,7 @@ async function get_walk(
 */
 async function snmp_test(target, comm, options){
 	options.timeout = 500;
+	options.retries = 2;
 	let mib = {"1": {"name": "test"}};
 	const session = snmp.createSession(target, comm, options);
 	let message;
