@@ -374,7 +374,8 @@ async function snmp_test(target, comm, options){
 	options.timeout = 500;
 	let mib = {"1": {"name": "test"}};
 	const session = snmp.createSession(target, comm, options);
-	let resp = await streePromisified(
+	let message;
+	await streePromisified(
 		session,
 		"1",
 		1,
@@ -382,11 +383,10 @@ async function snmp_test(target, comm, options){
 		"array",
 		1
 	).catch((error) => {
-		console.error("catch");
-		console.error(error.toString());
+		message = error.toString();
 	});
 	session.close();
-	return resp;
+	return !(/RequestTimedOutError/.test(message));
 }
 /*
 Funciones a Exportar
