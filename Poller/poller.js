@@ -56,11 +56,11 @@ async function process_target(target, conf, inhObj) {
 			};
 			if ("oids_get" in conf) {
 				let get = await poller.get_all(target, conf.community, conf.options, conf.oids_get, conf.reportError);
-				obj = merge(obj, get);
+				if (func.isObject(get)) obj = merge(obj, get);
 			}
 			if ("oids_walk" in conf) {
 				let walk = await poller.get_walk(target, conf.community, conf.options, conf.oids_walk, "array", conf.maxRepetitions, conf.maxIterations, conf.reportError);
-				obj = merge(obj, walk);
+				if (func.isObject(walk)) obj = merge(obj, walk);
 			}
 			let collected = print_ndjson(obj, inh, inhObj);
 			result.push(collected);
