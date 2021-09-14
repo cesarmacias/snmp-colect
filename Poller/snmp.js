@@ -380,7 +380,7 @@ async function snmp_test(target, comm, options){
 		message = error.toString();
 	});
 	session.close();
-	return !(/RequestTimedOut/.test(message));
+	return !(/RequestTimedOut/i.test(message));
 }
 /*
 Funciones a Exportar

@@ -11,6 +11,7 @@ const func = require("./tools.js");
 const mariadb = require("mariadb");
 const { Client } = require("pg");
 const merge = require("deepmerge");
+const deepmerge = require("deepmerge");
 
 function print_ndjson(doc, inh, inhObj) {
 	if (inh) {
@@ -22,6 +23,11 @@ function print_ndjson(doc, inh, inhObj) {
 }
 
 async function process_target(target, conf, inhObj) {
+	let obj = {
+		"measurement_name": conf.measurement,
+		"pollertime": conf.pollertime,
+		"tag": {"agent_host": target}
+	};
 	if (await poller.snmp_test(target, conf.community, conf.options)){
 		const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids, conf.reportError) : false;
 		let result = [];
@@ -49,11 +55,6 @@ async function process_target(target, conf, inhObj) {
 			}
 		}
 		if ("oids_get" in conf || "oids_walk" in conf) {
-			let obj = {
-				"measurement_name": conf.measurement,
-				"pollertime": conf.pollertime,
-				"tag": {"agent_host": target}
-			};
 			if ("oids_get" in conf) {
 				let get = await poller.get_all(target, conf.community, conf.options, conf.oids_get, conf.reportError);
 				if (func.isObject(get)) obj = merge(obj, get);
@@ -67,7 +68,12 @@ async function process_target(target, conf, inhObj) {
 		}
 		return result;
 	} else {
-		console.error("SNMP_RequestTimedOut:" + target);
+		if("reportError" in conf && conf.reportError == "log") {
+			console.error("SNMP_RequestTimedOut:" + target);
+		} else {
+			obj = deepmerge(obj, {tag: { SnmpError: { error: "RequestTimedOut" }}});
+			print_ndjson(obj, undefined, inhObj);
+		}
 	}
 }
 
