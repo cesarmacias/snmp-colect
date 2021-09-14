@@ -166,7 +166,11 @@ async function start() {
 						if (ipv4.isValid()) {
 							if ("comField" in conf.hosts && conf.hosts.comField in doc) conf.community = doc[conf.hosts.comField];
 							process_target(target, conf, doc);
+						} else {
+							console.error("target is not a valid ipv4");
 						}
+					} else {
+						console.error(conf.hosts.ipField + " as target is not a string");
 					}
 				})));
 			}
