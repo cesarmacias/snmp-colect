@@ -10,27 +10,13 @@ const addr = require("ip-address");
 const func = require("./tools.js");
 const mariadb = require("mariadb");
 const { Client } = require("pg");
+const merge = require("deepmerge");
 
 function print_ndjson(doc, inh, inhObj) {
-	let collected = {};
 	if (inh) {
 		for (let i in inh) doc.tag[i] = inh[i];
 	}
-	if (inhObj) {
-		if ("tag" in inhObj || "field" in inhObj) {
-			for (let k of ["tag", "field"]) {
-				if (k in doc) {
-					collected[k] = k in inhObj ? {...doc[k], ...inhObj[k]} : doc[k];
-				} else if (k in inhObj) {
-					collected[k] = inhObj[k];
-				}
-			}
-		} else {
-			collected = doc;    
-		}
-	} else {
-		collected = doc;
-	}
+	let collected = merge(doc,inhObj);
 	console.log(JSON.stringify(collected));
 	return collected;
 }
@@ -68,17 +54,13 @@ async function process_target(target, conf, inhObj) {
 				"pollertime": conf.pollertime,
 				"tag": {"agent_host": target}
 			};
-			let get, walk;
-			if ("oids_get" in conf)
-				get = await poller.get_all(target, conf.community, conf.options, conf.oids_get, conf.reportError);
-			if ("oids_walk" in conf)
-				walk = await poller.get_walk(target, conf.community, conf.options, conf.oids_walk, "array", conf.maxRepetitions, conf.maxIterations, conf.reportError);
-			for (let k of ["tag", "field"]) {
-				if (get && k in get) {
-					obj[k] = walk && k in walk ? {...obj[k], ...get[k], ...walk[k]} : {...obj[k], ...get[k]};
-				} else {
-					obj[k] = walk && k in walk ? {...obj[k], ...walk[k]} : obj[k];
-				}
+			if ("oids_get" in conf) {
+				let get = await poller.get_all(target, conf.community, conf.options, conf.oids_get, conf.reportError);
+				obj = merge(obj, get);
+			}
+			if ("oids_walk" in conf) {
+				let walk = await poller.get_walk(target, conf.community, conf.options, conf.oids_walk, "array", conf.maxRepetitions, conf.maxIterations, conf.reportError);
+				obj = merge(obj, walk);
 			}
 			let collected = print_ndjson(obj, inh, inhObj);
 			result.push(collected);

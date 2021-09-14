@@ -80,6 +80,8 @@ Version 1.3.2
 - update npm modules
 - correct bugs:
   - ipiterate in database read if is in dot notation
+  - add deepmerge in objects
+  - add snmptest at target to reduce the poller time when not responding
 
 Requests:
 
