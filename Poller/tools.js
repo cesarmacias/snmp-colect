@@ -8,6 +8,24 @@ function isObject(a) {
 	return !!a && a.constructor === Object;
 }
 /*
+Funcion para elimiar un campo de un objeto, el campo puede ser entregado en "dot notation"
+*/
+function del_field_obj(obj, field) {
+	let arr = field.split(".");
+	let tmp = obj;
+	for (let i of arr) {
+		if (i in tmp) {
+			tmp[i] = tmp[i] || {};
+			if (!isObject(tmp[i])) {
+				delete tmp[i];
+			} else {
+				tmp = tmp[i];
+			}
+	  	}
+	}
+	return obj;
+}
+/*
 Funcion para expandir un objeto en formato "."
  */
 function parseDotNotation(str, val, obj) {
@@ -71,5 +89,6 @@ module.exports = {
 	CustomError,
 	isObject,
 	ObjExpand,
-	get_ObjValue
+	get_ObjValue,
+	del_field_obj
 };

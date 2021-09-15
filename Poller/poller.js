@@ -156,6 +156,7 @@ async function start() {
 						if (ipv4.isValid()) {
 							if (func.isObject(doc)) {
 								if ("comField" in conf.hosts && conf.hosts.comField in doc) conf.community = doc[conf.hosts.comField];
+								func.del_field_obj(doc,conf.hosts.ipField);
 								await process_target(target, conf, doc);
 							} else {
 								await process_target(target, conf);
@@ -171,6 +172,7 @@ async function start() {
 						let ipv4 = new addr.Address4(target);
 						if (ipv4.isValid()) {
 							if ("comField" in conf.hosts && conf.hosts.comField in doc) conf.community = doc[conf.hosts.comField];
+							func.del_field_obj(doc,conf.hosts.ipField);
 							process_target(target, conf, doc);
 						} else {
 							console.error("target is not a valid ipv4");
