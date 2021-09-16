@@ -10,79 +10,70 @@ const addr = require("ip-address");
 const func = require("./tools.js");
 const mariadb = require("mariadb");
 const { Client } = require("pg");
+const merge = require("deepmerge");
 
 function print_ndjson(doc, inh, inhObj) {
-	let collected = {};
 	if (inh) {
 		for (let i in inh) doc.tag[i] = inh[i];
 	}
-	if (inhObj) {
-		if ("tag" in inhObj || "field" in inhObj) {
-			for (let k of ["tag", "field"]) {
-				if (k in doc) {
-					collected[k] = k in inhObj ? {...doc[k], ...inhObj[k]} : doc[k];
-				} else if (k in inhObj) {
-					collected[k] = inhObj[k];
-				}
-			}
-		} else {
-			collected = doc;    
-		}
-	} else {
-		collected = doc;
-	}
+	let collected = func.isObject(inhObj) ? merge(doc, inhObj) : doc;
 	console.log(JSON.stringify(collected));
 	return collected;
 }
 
 async function process_target(target, conf, inhObj) {
-	const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids, conf.reportError) : false;
-	let result = [];
-	if ("table" in conf) {
-		for (const table of conf.table) {
-			if ("options" in table) {
-				if (!("measurement" in table.options)) {
-					console.error(new func.CustomError("Config", "No ha declarado measurement dentro de table"));
+	let obj = {
+		"measurement_name": conf.measurement,
+		"pollertime": conf.pollertime,
+		"tag": {"agent_host": target}
+	};
+	if (await poller.snmp_test(target, conf.community, conf.options)){
+		const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids, conf.reportError) : false;
+		let result = [];
+		if ("table" in conf) {
+			for (const table of conf.table) {
+				if ("options" in table) {
+					if (!("measurement" in table.options)) {
+						console.error(new func.CustomError("Config", "No ha declarado measurement dentro de table"));
+						continue;
+					}
+				} else {
+					console.error(new func.CustomError("Config", "No ha declarado options dentro de table"));
 					continue;
 				}
-			} else {
-				console.error(new func.CustomError("Config", "No ha declarado options dentro de table"));
-				continue;
-			}
-			const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.limit, conf.reportError);
-			for (let k in part) {
-				let doc = part[k];
-				if ("index" in table.options && table.options.index) doc.tag.index = k;
-				if ("pollertime" in conf) doc.pollertime = conf.pollertime;
-				doc.tag.agent_host = target;
-				doc.measurement_name = table.options.measurement;
-				let collected = print_ndjson(doc, inh, inhObj);
-				result.push(collected);
+				const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.limit, conf.reportError);
+				for (let k in part) {
+					let doc = part[k];
+					if ("index" in table.options && table.options.index) doc.tag.index = k;
+					if ("pollertime" in conf) doc.pollertime = conf.pollertime;
+					doc.tag.agent_host = target;
+					doc.measurement_name = table.options.measurement;
+					let collected = print_ndjson(doc, inh, inhObj);
+					result.push(collected);
+				}
 			}
 		}
-	}
-	if ("oids_get" in conf || "oids_walk" in conf) {
-		let obj = {
-			"measurement_name": conf.measurement,
-			"pollertime": conf.pollertime,
-			"tag": {"agent_host": target}
-		};
-		let get, walk;
-		if ("oids_get" in conf)
-			get = await poller.get_all(target, conf.community, conf.options, conf.oids_get, conf.reportError);
-		if ("oids_walk" in conf)
-			walk = await poller.get_walk(target, conf.community, conf.options, conf.oids_walk, "array", conf.maxRepetitions, conf.maxIterations, conf.reportError);
-		for (let k of ["tag", "field"]) {
-			if (get && k in get) {
-				obj[k] = walk && k in walk ? {...obj[k], ...get[k], ...walk[k]} : {...obj[k], ...get[k]};
-			} else {
-				obj[k] = walk && k in walk ? {...obj[k], ...walk[k]} : obj[k];
+		if ("oids_get" in conf || "oids_walk" in conf) {
+			if ("oids_get" in conf) {
+				let get = await poller.get_all(target, conf.community, conf.options, conf.oids_get, conf.reportError);
+				if (func.isObject(get)) obj = merge(obj, get);
 			}
+			if ("oids_walk" in conf) {
+				let walk = await poller.get_walk(target, conf.community, conf.options, conf.oids_walk, "array", conf.maxRepetitions, conf.maxIterations, conf.reportError);
+				if (func.isObject(walk)) obj = merge(obj, walk);
+			}
+			let collected = print_ndjson(obj, inh, inhObj);
+			result.push(collected);
 		}
-		let collected = print_ndjson(obj, inh, inhObj);
-		result.push(collected);
+		return result;
+	} else {
+		if("reportError" in conf && conf.reportError == "log") {
+			console.error("SNMP_RequestTimedOut:" + target);
+		} else {
+			obj = merge(obj, {tag: { SnmpError: { error: "RequestTimedOut" }}});
+			print_ndjson(obj, undefined, inhObj);
+		}
 	}
-	return result;
 }
 
 async function start() {
@@ -164,6 +155,7 @@ async function start() {
 						if (ipv4.isValid()) {
 							if (func.isObject(doc)) {
 								if ("comField" in conf.hosts && conf.hosts.comField in doc) conf.community = doc[conf.hosts.comField];
+								func.del_field_obj(doc,conf.hosts.ipField);
 								await process_target(target, conf, doc);
 							} else {
 								await process_target(target, conf);
@@ -174,13 +166,18 @@ async function start() {
 			} else throw new func.CustomError("DbConfig", "Type of DB is not allowed");
 			if (data.length > 0) {
 				Promise.all(data.map(throat(ConLimit, async (doc) => {
-					let target = doc[conf.hosts.ipField];
+					let target = func.get_ObjValue(doc,conf.hosts.ipField);
 					if (typeof target === "string") {
 						let ipv4 = new addr.Address4(target);
 						if (ipv4.isValid()) {
 							if ("comField" in conf.hosts && conf.hosts.comField in doc) conf.community = doc[conf.hosts.comField];
+							func.del_field_obj(doc,conf.hosts.ipField);
 							process_target(target, conf, doc);
+						} else {
+							console.error("target is not a valid ipv4");
 						}
+					} else {
+						console.error(conf.hosts.ipField + " as target is not a string");
 					}
 				})));
 			}

@@ -149,13 +149,14 @@ async function get_table(target, comm, options, oids, max) {
 						let err = {
 							tag: {
 								SnmpError: {
-									inh_oids: error,
-								},
-							},
-							host: target
+									error: error.name,
+									host: target,
+									oid: oid.oid,
+									type: "table"
+								}
+							}
 						};
 						console.error(JSON.stringify(err));
-
 					}
 					resolve(obj);
 				});
@@ -171,23 +172,22 @@ Funcion para obtener datos snmpget para ser heredados en las tablas
 async function get_oids(target, comm, options, oids, reportError) {
 	return new Promise((resolve) => {
 		let session = snmp.createSession(target, comm, options);
-		session.get(Object.keys(oids), (error, varbinds) => {
+		let _oids = Object.keys(oids);
+		session.get(_oids, (error, varbinds) => {
 			let resp;
 			if (error) {
 				resp = {
 					tag: {
 						SnmpError: {
-							inh_oids: error,
-						},
-					},
+							error: error.name,
+							host: target,
+							oids: _oids,
+							type: "inh"
+						}
+					}
 				};
 				if (reportError === "log") {
-					console.error(
-						JSON.stringify({
-							...resp.tag,
-							host: target,
-						})
-					);
+					console.error(JSON.stringify(resp));
 					resp = undefined;
 				}
 			} else {
@@ -218,17 +218,15 @@ function get_all(target, comm, options, oids, reportError) {
 				resp = {
 					tag: {
 						SnmpError: {
-							oids_get: error,
-						},
-					},
+							error: error.name,
+							host: target,
+							oids: _oids,
+							type: "get"
+						}
+					}
 				};
 				if (reportError === "log") {
-					console.error(
-						JSON.stringify({
-							...resp.tag,
-							host: target,
-						})
-					);
+					console.error(JSON.stringify(resp));
 					resp = undefined;
 				}
 			} else {
@@ -370,6 +368,21 @@ async function get_walk(
 	}
 }
 /*
+	Test SNMP
+*/
+async function snmp_test(target, comm, options){
+	options.timeout = 500;
+	options.retries = 2;
+	let mib = {"1": {"name": "test"}};
+	const session = snmp.createSession(target, comm, options);
+	let message;
+	await streePromisified(session, "1", 1, mib, "array", 1).catch((error) => {
+		message = error.toString();
+	});
+	session.close();
+	return !(/RequestTimedOut/i.test(message));
+}
+/*
 Funciones a Exportar
 */
 module.exports = {
@@ -378,4 +391,5 @@ module.exports = {
 	get_all,
 	read_config,
 	get_walk,
+	snmp_test
 };

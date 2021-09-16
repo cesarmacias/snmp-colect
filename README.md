@@ -43,7 +43,7 @@ Example: the ifHCInOctets (if-mib) that are a counter and is not useful to index
 - Collect data from HFC CMTS / Cable Modems
     node poller.js --config=conf/conf_cmts.json | poller-cm.js --config=conf/conf_cm.json
 
-## Roadmap
+## Release Notes
 
 Version 1.0:
 
@@ -75,7 +75,15 @@ Version 1.3.1
 
 - minor release, correct bug of first field with prefix (field or tag) duplicated
 
-Requests:
+Version 1.3.2
+
+- update npm modules
+- correct bugs:
+  - ipiterate in database read if is in dot notation
+  - add deepmerge in objects
+  - add snmptest at target to reduce the poller time when not responding
+
+## Requests
 
 - unify poller.js and poller-cm.js
 - add support for mongodb
