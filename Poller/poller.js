@@ -11,13 +11,13 @@ const func = require("./tools.js");
 const mariadb = require("mariadb");
 const { Client } = require("pg");
 const merge = require("deepmerge");
-const deepmerge = require("deepmerge");
 
 function print_ndjson(doc, inh, inhObj) {
 	if (inh) {
 		for (let i in inh) doc.tag[i] = inh[i];
 	}
-	let collected = merge(doc,inhObj);
+	let collected = func.isObject(inhObj) ? inhObj : {};
+	collected = merge(doc, collected);
 	console.log(JSON.stringify(collected));
 	return collected;
 }
@@ -71,7 +71,7 @@ async function process_target(target, conf, inhObj) {
 		if("reportError" in conf && conf.reportError == "log") {
 			console.error("SNMP_RequestTimedOut:" + target);
 		} else {
-			obj = deepmerge(obj, {tag: { SnmpError: { error: "RequestTimedOut" }}});
+			obj = merge(obj, {tag: { SnmpError: { error: "RequestTimedOut" }}});
 			print_ndjson(obj, undefined, inhObj);
 		}
 	}
