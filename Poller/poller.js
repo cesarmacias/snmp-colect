@@ -16,8 +16,7 @@ function print_ndjson(doc, inh, inhObj) {
 	if (inh) {
 		for (let i in inh) doc.tag[i] = inh[i];
 	}
-	let collected = func.isObject(inhObj) ? inhObj : {};
-	collected = merge(doc, collected);
+	let collected = func.isObject(inhObj) ? merge(doc, inhObj) : doc;
 	console.log(JSON.stringify(collected));
 	return collected;
 }
