@@ -27,7 +27,7 @@ async function process_target(target, conf, inhObj) {
 		"pollertime": conf.pollertime,
 		"tag": {"agent_host": target}
 	};
-	if (await poller.snmp_test(target, conf.community, conf.options)){
+	if (await poller.snmp_test(target, conf.community, JSON.parse(JSON.stringify(conf.options)))){
 		const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids, conf.reportError) : false;
 		let result = [];
 		if ("table" in conf) {
