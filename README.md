@@ -83,6 +83,11 @@ Version 1.3.2
   - add deepmerge in objects
   - add snmptest at target to reduce the poller time when not responding
 
+Version 1.3.3
+
+- correct bugs:
+  - snmptest override snmp.options
+
 ## Requests
 
 - unify poller.js and poller-cm.js
