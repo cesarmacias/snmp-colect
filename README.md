@@ -35,6 +35,14 @@ Example: the ifHCInOctets (if-mib) that are a counter and is not useful to index
 - examples/cable_modems.json -> config file for HFC CableModems. poller-cm.js
 - examples/vendor-list.json -> config for vedors OUI MAC, to filter OIDs to poller. poller-cm.js
 
+>Data processing:
+
+Configuration inside of OID context:
+
+- "type": [ hex ] transform value in hex to string
+- "conversion": [ ipv4, number ] transform value in ipv4 or number
+- "index_slice": [ int, int ] apply slice function to oid index (only for table)
+
 ## Execution
 
 - Collect data from list of equips
@@ -87,6 +95,12 @@ Version 1.3.3
 
 - correct bugs:
   - snmptest override snmp.options
+
+Version 1.3.4
+
+- Feature:
+  - get_table/index_slice add slice function to index per OID in Table
+  - update README
 
 ## Requests
 

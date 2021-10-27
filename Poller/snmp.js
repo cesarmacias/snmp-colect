@@ -6,6 +6,7 @@ const snmp = require("net-snmp");
 const fs = require("fs");
 const addr = require("ip-address");
 const func = require("./tools.js");
+const merge = require("deepmerge");
 
 /*
 Funcion para convetir el valor recibido en IPv4
@@ -110,22 +111,18 @@ async function feedCb(varbinds) {
 			console.error(snmp.varbindError(varbinds[i]).toString);
 		} else {
 			let index = varbinds[i].oid.substring(self.mib.oid.length + 1);
-			let value, type;
-			if (varbinds[i].type === snmp.ObjectType.OctetString) {
-				value =
-					"type" in self.mib && self.mib.type === "hex" ?
-						varbinds[i].value.toString("hex") :
-						varbinds[i].value.toString();
-			} else if (varbinds[i].type === snmp.ObjectType.Counter64) {
-				value = 0;
-				for (let x of varbinds[i].value.values()) {
-					value *= 256;
-					value += x;
+			let type = "tag" in self.mib && self.mib.tag ? "tag" : "field";
+			let value = await vb_transform(varbinds[i], self.mib);
+			if ("index_slice" in self.mib && Array.isArray(self.mib.index_slice )) {
+				let slice = self.mib.index_slice;
+				let arr = index.split(".");
+				arr = arr.slice(slice[0], slice[1] || slice.length);
+				let idx = arr.join(".");
+				if (idx !== index) {
+					self.resp[index] = merge(self.resp[index], {idx: {[self.mib.name]: index}});
+					index = idx;
 				}
-			} else value = varbinds[i].value;
-			if ("conversion" in self.mib && self.mib.conversion === "ipv4")
-				value = await addr_convert(value);
-			type = "tag" in self.mib && self.mib.tag ? "tag" : "field";
+			}
 			if (!(index in self.resp)) self.resp[index] = {};
 			if (!("tag" in self.resp[index])) self.resp[index].tag = {};
 			if (!("field" in self.resp[index])) self.resp[index].field = {};
