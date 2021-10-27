@@ -91,7 +91,7 @@ async function read_config(file, inh, def, newConf) {
 	if ("options" in config)
 		if ("version" in config.options)
 			config.options.version =
-			config.options.version === "1" ? snmp.Version1 : snmp.Version2c;
+        config.options.version === "1" ? snmp.Version1 : snmp.Version2c;
 	if (def && func.isObject(def)) {
 		for (const key in def) {
 			if (Object.prototype.hasOwnProperty.call(def, key)) {
@@ -102,34 +102,6 @@ async function read_config(file, inh, def, newConf) {
 	return config;
 }
 /*
-Funcion para procesar los datos obtenidos de un snmpwalk a un dispositivo, los valores los asocia a "field" o "tag"
-*/
-async function feedCb(varbinds) {
-	let self = this;
-	for (let i = 0; i < varbinds.length; i++)
-		if (snmp.isVarbindError(varbinds[i])) {
-			console.error(snmp.varbindError(varbinds[i]).toString);
-		} else {
-			let index = varbinds[i].oid.substring(self.mib.oid.length + 1);
-			let type = "tag" in self.mib && self.mib.tag ? "tag" : "field";
-			let value = await vb_transform(varbinds[i], self.mib);
-			if ("index_slice" in self.mib && Array.isArray(self.mib.index_slice )) {
-				let slice = self.mib.index_slice;
-				let arr = index.split(".");
-				arr = arr.slice(slice[0], slice[1] || slice.length);
-				let idx = arr.join(".");
-				if (idx !== index) {
-					self.resp[index] = merge(self.resp[index], {idx: {[self.mib.name]: index}});
-					index = idx;
-				}
-			}
-			if (!(index in self.resp)) self.resp[index] = {};
-			if (!("tag" in self.resp[index])) self.resp[index].tag = {};
-			if (!("field" in self.resp[index])) self.resp[index].field = {};
-			self.resp[index][type][self.mib.name] = value;
-		}
-}
-/*
 Funcion para obtener datos tipo tabla (indice compartido) por SNMP
 */
 async function get_table(target, comm, options, oids, max) {
@@ -138,25 +110,50 @@ async function get_table(target, comm, options, oids, max) {
 	for (const oid of oids) {
 		await (function () {
 			return new Promise((resolve) => {
-				session.subtree(oid.oid, max, feedCb.bind({
-					mib: oid,
-					resp: obj
-				}), (error) => {
-					if (error) {
-						let err = {
-							tag: {
-								SnmpError: {
-									error: error.name,
-									host: target,
-									oid: oid.oid,
-									type: "table"
+				session.subtree(
+					oid.oid,
+					max,
+					async (varbinds) => {
+						for (let i = 0; i < varbinds.length; i++)
+							if (snmp.isVarbindError(varbinds[i])) {
+								console.error(snmp.varbindError(varbinds[i]).toString);
+							} else {
+								let index = varbinds[i].oid.substring(oid.oid.length + 1);
+								let type = "tag" in oid && oid.tag ? "tag" : "field";
+								let value = await vb_transform(varbinds[i], oid);
+								if ("index_slice" in oid && Array.isArray(oid.index_slice)) {
+									let slice = oid.index_slice;
+									let arr = index.split(".");
+									arr = arr.slice(slice[0], slice[1] || slice.length);
+									let idx = arr.join(".");
+									if (idx !== index) {
+										obj[idx] = merge(obj[idx], { idx: { [oid.name]: index } });
+										index = idx;
+									}
 								}
+								if (!(index in obj)) obj[index] = {};
+								if (!("tag" in obj[index])) obj[index].tag = {};
+								if (!("field" in obj[index])) obj[index].field = {};
+								obj[index][type][oid.name] = value;
 							}
-						};
-						console.error(JSON.stringify(err));
+					},
+					(error) => {
+						if (error) {
+							let err = {
+								tag: {
+									SnmpError: {
+										error: error.name,
+										host: target,
+										oid: oid.oid,
+										type: "table",
+									},
+								},
+							};
+							console.error(JSON.stringify(err));
+						}
+						resolve(obj);
 					}
-					resolve(obj);
-				});
+				);
 			});
 		})();
 	}
@@ -179,9 +176,9 @@ async function get_oids(target, comm, options, oids, reportError) {
 							error: error.name,
 							host: target,
 							oids: _oids,
-							type: "inh"
-						}
-					}
+							type: "inh",
+						},
+					},
 				};
 				if (reportError === "log") {
 					console.error(JSON.stringify(resp));
@@ -218,9 +215,9 @@ function get_all(target, comm, options, oids, reportError) {
 							error: error.name,
 							host: target,
 							oids: _oids,
-							type: "get"
-						}
-					}
+							type: "get",
+						},
+					},
 				};
 				if (reportError === "log") {
 					console.error(JSON.stringify(resp));
@@ -232,14 +229,17 @@ function get_all(target, comm, options, oids, reportError) {
 						let mib = oids[vb.oid];
 						let type = "tag" in mib && mib.tag ? "tag" : "field";
 						let name = mib.name;
-						resp[type] = resp && type in resp ? {
-							...resp[type],
-							...{
-								[name]: await vb_transform(vb, mib)
-							}
-						} : {
-							[name]: await vb_transform(vb, mib)
-						};
+						resp[type] =
+              resp && type in resp ?
+              	{
+              		...resp[type],
+              		...{
+              			[name]: await vb_transform(vb, mib),
+              		},
+              	} :
+              	{
+              		[name]: await vb_transform(vb, mib),
+              	};
 					}
 				}
 			}
@@ -251,33 +251,41 @@ function get_all(target, comm, options, oids, reportError) {
 /*
 Funcion para que snmp.subtree trabaje con promesas
 */
-function streePromisified(session, oid, maxRepetitions, mib, TypeResponse, maxIterations) {
+function streePromisified(
+	session,
+	oid,
+	maxRepetitions,
+	mib,
+	TypeResponse,
+	maxIterations
+) {
 	return new Promise(function (resolve, reject) {
 		let i = 0;
 		let response = TypeResponse === "array" ? [] : {};
-		session.subtree(oid, maxRepetitions, async (varbinds) => {
-			if (maxIterations && i++ > maxIterations)
-				reject("maxIterations reached");
-			for (let vb of varbinds)
-				if (!snmp.isVarbindError(vb)) {
-					let value = await vb_transform(vb, mib);
-					if (TypeResponse === "array")
-						response.push(value);
-					else {
-						let index = vb.oid.substring(oid.length + 1);
-						response = {
-							...response,
-							[index]: value
-						};
+		session.subtree(
+			oid,
+			maxRepetitions,
+			async (varbinds) => {
+				if (maxIterations && i++ > maxIterations)
+					reject("maxIterations reached");
+				for (let vb of varbinds)
+					if (!snmp.isVarbindError(vb)) {
+						let value = await vb_transform(vb, mib);
+						if (TypeResponse === "array") response.push(value);
+						else {
+							let index = vb.oid.substring(oid.length + 1);
+							response = {
+								...response,
+								[index]: value,
+							};
+						}
 					}
-				}
-
-		}, (error) => {
-			if (error)
-				reject(error);
-			else
-				resolve(response);
-		});
+			},
+			(error) => {
+				if (error) reject(error);
+				else resolve(response);
+			}
+		);
 	});
 }
 /*
@@ -309,25 +317,29 @@ async function get_walk(
 				maxIterations
 			).catch((error) => {
 				oiderror.SnmpError =
-					"SnmpError" in oiderror ? {
-						...oiderror.SnmpError,
-						...{
-							[oids[oid].name]: error.toString(),
-						},
-					} : {
-						[oids[oid].name]: error.toString(),
-					};
+          "SnmpError" in oiderror ?
+          	{
+          		...oiderror.SnmpError,
+          		...{
+          			[oids[oid].name]: error.toString(),
+          		},
+          	} :
+          	{
+          		[oids[oid].name]: error.toString(),
+          	};
 			});
 			if (value && typeof value === "object")
 				resp[type] =
-				resp && type in resp ? {
-					...resp[type],
-					...{
-						[mib.name]: value,
-					},
-				} : {
-					[mib.name]: value,
-				};
+          resp && type in resp ?
+          	{
+          		...resp[type],
+          		...{
+          			[mib.name]: value,
+          		},
+          	} :
+          	{
+          		[mib.name]: value,
+          	};
 		}
 		session.close();
 	} catch (error) {
@@ -354,11 +366,12 @@ async function get_walk(
 				);
 			} else {
 				resp.tag =
-					"tag" in resp ? {
-						...resp.tag,
-						...oiderror,
-					} :
-						oiderror;
+          "tag" in resp ?
+          	{
+          		...resp.tag,
+          		...oiderror,
+          	} :
+          	oiderror;
 			}
 		}
 		return resp;
@@ -367,17 +380,17 @@ async function get_walk(
 /*
 	Test SNMP
 */
-async function snmp_test(target, comm, options){
+async function snmp_test(target, comm, options) {
 	options.timeout = 500;
 	options.retries = 2;
-	let mib = {"1": {"name": "test"}};
+	let mib = { 1: { name: "test" } };
 	const session = snmp.createSession(target, comm, options);
 	let message;
 	await streePromisified(session, "1", 1, mib, "array", 1).catch((error) => {
 		message = error.toString();
 	});
 	session.close();
-	return !(/RequestTimedOut/i.test(message));
+	return !/RequestTimedOut/i.test(message);
 }
 /*
 Funciones a Exportar
@@ -388,5 +401,5 @@ module.exports = {
 	get_all,
 	read_config,
 	get_walk,
-	snmp_test
+	snmp_test,
 };
