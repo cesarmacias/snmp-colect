@@ -168,7 +168,7 @@ function streeTable(
 	mib,
 	response
 ) {
-	return new Promise(function (resolve, reject) {
+	return new Promise( (resolve, reject) => {
 		let type = "tag" in mib && mib.tag ? "tag" : "field";
 		session.subtree(
 			oid,
@@ -176,7 +176,8 @@ function streeTable(
 			async (varbinds) => {
 				for (let vb of varbinds)
 					if (!snmp.isVarbindError(vb)) {
-						let value = await vb_transform(vb, mib);
+						//let value = await vb_transform(vb, mib);
+						let value = vb.value;
 						let index = vb.oid.substring(oid.length + 1);
 						if ("index_slice" in mib && Array.isArray(mib.index_slice)) {
 							let slice = mib.index_slice;
@@ -192,7 +193,7 @@ function streeTable(
 					}
 			},
 			(error) => {
-				if (error) reject(error);
+				if (error) return reject(error);
 				else resolve(response);
 			}
 		);
@@ -209,7 +210,7 @@ async function get_table(
 	let resp = {};
 	const session = snmp.createSession(target, comm, options);
 	for (const mib of oids) {
-		await streeTable(
+		const part = await streeTable(
 			session,
 			mib.oid,
 			maxRepetitions,
@@ -218,6 +219,7 @@ async function get_table(
 		).catch((error) => {
 			console.error({[mib.name]: error.toString()});
 		});
+		console.error(part);
 	}
 	session.close();
 	return resp;
