@@ -104,7 +104,7 @@ async function read_config(file, inh, def, newConf) {
 /*
 Funcion para obtener datos tipo tabla (indice compartido) por SNMP
 */
-async function get_table(target, comm, options, oids, max) {
+async function get_table2(target, comm, options, oids, max) {
 	const session = snmp.createSession(target, comm, options);
 	let obj = {};
 	for (const oid of oids) {
@@ -159,6 +159,68 @@ async function get_table(target, comm, options, oids, max) {
 	}
 	session.close();
 	return obj;
+}
+//
+function streeTable(
+	session,
+	oid,
+	maxRepetitions,
+	mib,
+	response
+) {
+	return new Promise(function (resolve, reject) {
+		let type = "tag" in mib && mib.tag ? "tag" : "field";
+		session.subtree(
+			oid,
+			maxRepetitions,
+			async (varbinds) => {
+				for (let vb of varbinds)
+					if (!snmp.isVarbindError(vb)) {
+						let value = await vb_transform(vb, mib);
+						let index = vb.oid.substring(oid.length + 1);
+						if ("index_slice" in mib && Array.isArray(mib.index_slice)) {
+							let slice = mib.index_slice;
+							let arr = index.split(".");
+							arr = arr.slice(slice[0], slice[1] || slice.length);
+							let idx = arr.join(".");
+							if (idx !== index) {
+								response[idx] = merge(response[idx], { idx: { [mib.name]: index } });
+								index = idx;
+							}
+						}
+						response[index] = merge(response[index], {[type]: {[mib.name]: value}});
+					}
+			},
+			(error) => {
+				if (error) reject(error);
+				else resolve(response);
+			}
+		);
+	});
+}
+//
+async function get_table(
+	target,
+	comm,
+	options,
+	oids,
+	maxRepetitions
+) {
+	let resp = {};
+	const session = snmp.createSession(target, comm, options);
+	for (const mib of oids) {
+		await streeTable(
+			session,
+			mib.oid,
+			maxRepetitions,
+			mib,
+			resp
+		).catch((error) => {
+			console.error({[mib.name]: error.toString()});
+		});
+	}
+	session.close();
+	return resp;
 }
 /*
 Funcion para obtener datos snmpget para ser heredados en las tablas
@@ -262,6 +324,8 @@ function streePromisified(
 	return new Promise(function (resolve, reject) {
 		let i = 0;
 		let response = TypeResponse === "array" ? [] : {};
+		maxRepetitions = maxRepetitions || 20;
+		maxIterations = maxIterations || maxRepetitions;
 		session.subtree(
 			oid,
 			maxRepetitions,
@@ -397,6 +461,7 @@ Funciones a Exportar
 */
 module.exports = {
 	get_table,
+	get_table2,
 	get_oids,
 	get_all,
 	read_config,
