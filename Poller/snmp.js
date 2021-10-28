@@ -11,33 +11,25 @@ const merge = require("deepmerge");
 /*
 Funcion para convetir el valor recibido en IPv4
 */
-async function addr_convert(value) {
+function addr_convert(value) {
 	let ipv4;
 	if (typeof value === "string") {
 		ipv4 = new addr.Address4(value);
-		if (ipv4.isValid()) {
-			return ipv4.address;
-		} else {
+		if (!ipv4.isValid()) {
 			value = value.replace(/[:.\s]/g, "");
 			let reg = /^[0-9a-fA-F]{8}$/g;
-			if (reg.test(value)) {
+			if (reg.test(value))
 				ipv4 = new addr.Address4.fromHex(value);
-				if (ipv4.isValid()) return ipv4.address;
-				else throw new Error("Not IPv4");
-			} else throw new Error("Not IPv4");
 		}
 	} else if (typeof value === "number") {
 		ipv4 = new addr.Address4.fromInteger(value);
-		if (ipv4.isValid()) {
-			return ipv4.address;
-		} else throw new Error("Not IPv4");
 	}
-	throw new Error("Error Type");
+	return ipv4.address;
 }
 /*
 Funcion para tratar/modificar el valor recibido
 */
-async function vb_transform(vb, oid) {
+function vb_transform(vb, oid) {
 	let value = vb.value;
 	if (vb.type === snmp.ObjectType.OctetString) {
 		value = vb.value.toString();
@@ -62,7 +54,7 @@ async function vb_transform(vb, oid) {
 	let resp = value;
 	if ("conversion" in oid) {
 		if (oid.conversion === "ipv4") {
-			resp = await addr_convert(value);
+			resp = addr_convert(value);
 		} else if (oid.conversion === "number") {
 			resp = value * 1;
 		}
@@ -104,63 +96,6 @@ async function read_config(file, inh, def, newConf) {
 /*
 Funcion para obtener datos tipo tabla (indice compartido) por SNMP
 */
-async function get_table2(target, comm, options, oids, max) {
-	const session = snmp.createSession(target, comm, options);
-	let obj = {};
-	for (const oid of oids) {
-		await (function () {
-			return new Promise((resolve) => {
-				session.subtree(
-					oid.oid,
-					max,
-					async (varbinds) => {
-						for (let i = 0; i < varbinds.length; i++)
-							if (snmp.isVarbindError(varbinds[i])) {
-								console.error(snmp.varbindError(varbinds[i]).toString);
-							} else {
-								let index = varbinds[i].oid.substring(oid.oid.length + 1);
-								let type = "tag" in oid && oid.tag ? "tag" : "field";
-								let value = await vb_transform(varbinds[i], oid);
-								if ("index_slice" in oid && Array.isArray(oid.index_slice)) {
-									let slice = oid.index_slice;
-									let arr = index.split(".");
-									arr = arr.slice(slice[0], slice[1] || slice.length);
-									let idx = arr.join(".");
-									if (idx !== index) {
-										obj[idx] = merge(obj[idx], { idx: { [oid.name]: index } });
-										index = idx;
-									}
-								}
-								if (!(index in obj)) obj[index] = {};
-								if (!("tag" in obj[index])) obj[index].tag = {};
-								if (!("field" in obj[index])) obj[index].field = {};
-								obj[index][type][oid.name] = value;
-							}
-					},
-					(error) => {
-						if (error) {
-							let err = {
-								tag: {
-									SnmpError: {
-										error: error.name,
-										host: target,
-										oid: oid.oid,
-										type: "table",
-									},
-								},
-							};
-							console.error(JSON.stringify(err));
-						}
-						resolve(obj);
-					}
-				);
-			});
-		})();
-	}
-	session.close();
-	return obj;
-}
-//
 function streeTable(
 	session,
 	oid,
@@ -176,8 +111,7 @@ function streeTable(
 			async (varbinds) => {
 				for (let vb of varbinds)
 					if (!snmp.isVarbindError(vb)) {
-						//let value = await vb_transform(vb, mib);
-						let value = vb.value;
+						let value = vb_transform(vb, mib);
 						let index = vb.oid.substring(oid.length + 1);
 						if ("index_slice" in mib && Array.isArray(mib.index_slice)) {
 							let slice = mib.index_slice;
@@ -199,7 +133,9 @@ function streeTable(
 		);
 	});
 }
-//
+/*
+ main function get_table
+*/
 async function get_table(
 	target,
 	comm,
@@ -209,18 +145,16 @@ async function get_table(
 ) {
 	let resp = {};
 	const session = snmp.createSession(target, comm, options);
-	for (const mib of oids) {
-		const part = await streeTable(
+	for (const mib of oids)
+		await streeTable(
 			session,
 			mib.oid,
 			maxRepetitions,
 			mib,
 			resp
 		).catch((error) => {
-			console.error({[mib.name]: error.toString()});
+			console.error({[mib.name]: error.toString(), host: target});
 		});
-		console.error(part);
-	}
 	session.close();
 	return resp;
 }
@@ -336,7 +270,7 @@ function streePromisified(
 					reject("maxIterations reached");
 				for (let vb of varbinds)
 					if (!snmp.isVarbindError(vb)) {
-						let value = await vb_transform(vb, mib);
+						let value = vb_transform(vb, mib);
 						if (TypeResponse === "array") response.push(value);
 						else {
 							let index = vb.oid.substring(oid.length + 1);
@@ -463,7 +397,6 @@ Funciones a Exportar
 */
 module.exports = {
 	get_table,
-	get_table2,
 	get_oids,
 	get_all,
 	read_config,
