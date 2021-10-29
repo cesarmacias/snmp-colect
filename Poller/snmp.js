@@ -322,12 +322,12 @@ async function get_walk(
 	const session = snmp.createSession(target, comm, options);
 	for (const oid of Object.keys(oids)){
 		let mib = oids[oid];
-		await streePromise(
+		let part = await streePromise(
 			session,
 			oid,
 			maxRepetitions,
 			mib,
-			resp,
+			{},
 			TypeResponse || "array"
 		).catch((error) => {
 			let err = {[mib.name]: error.toString()};
@@ -337,6 +337,7 @@ async function get_walk(
 				resp.snmperror = merge(resp.snmperror, err);
 			}
 		});
+		resp = merge(resp, part);
 	}
 	session.close();
 	return resp;
