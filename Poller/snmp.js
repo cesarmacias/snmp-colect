@@ -320,10 +320,11 @@ async function get_walk(
 ) {
 	let resp = {};
 	const session = snmp.createSession(target, comm, options);
-	for (const mib of oids)
+	for (const oid of Object.keys(oids)){
+		let mib = oids[oid];
 		await streePromise(
 			session,
-			mib.oid,
+			oid,
 			maxRepetitions,
 			mib,
 			resp,
@@ -336,6 +337,7 @@ async function get_walk(
 				resp.snmperror = merge(resp.snmperror, err);
 			}
 		});
+	}
 	session.close();
 	return resp;
 }

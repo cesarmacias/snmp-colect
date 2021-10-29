@@ -8,7 +8,7 @@ const fs = require("fs");
 const throat = require("throat");
 
 async function filter_vendor(vendorList, mac, oids_get) {
-	let vendor = await vendorList.find((vendorItem) => {
+	let vendor = vendorList.find((vendorItem) => {
 		return (
 			vendorItem.oui.findIndex((ouiItem) => {
 				return ouiItem === mac.substring(0, 6);
@@ -18,11 +18,10 @@ async function filter_vendor(vendorList, mac, oids_get) {
 	let vendorName = vendor ? vendor.vendor : "";
 	let keyNames = Object.keys(oids_get);
 	let oids = {};
-	for await (let key of keyNames) {
+	for (let key of keyNames) {
 		if (!oids_get[key].vendor || oids_get[key].vendor.includes(vendorName))
 			oids[key] = oids_get[key];
 	}
-
 	return oids;
 }
 
