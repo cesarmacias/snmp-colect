@@ -96,34 +96,43 @@ async function read_config(file, inh, def, newConf) {
 /*
 Funcion para obtener datos tipo tabla (indice compartido) por SNMP
 */
-function streeTable(
+function streePromise(
 	session,
 	oid,
 	maxRepetitions,
 	mib,
-	response
+	response, 
+	TypeResponse
 ) {
 	return new Promise( (resolve, reject) => {
 		let type = "tag" in mib && mib.tag ? "tag" : "field";
 		session.subtree(
 			oid,
 			maxRepetitions,
-			async (varbinds) => {
+			(varbinds) => {
 				for (let vb of varbinds)
 					if (!snmp.isVarbindError(vb)) {
 						let value = vb_transform(vb, mib);
 						let index = vb.oid.substring(oid.length + 1);
-						if ("index_slice" in mib && Array.isArray(mib.index_slice)) {
-							let slice = mib.index_slice;
-							let arr = index.split(".");
-							arr = arr.slice(slice[0], slice[1] || slice.length);
-							let idx = arr.join(".");
-							if (idx !== index) {
-								response[idx] = merge(response[idx], { idx: { [mib.name]: index } });
-								index = idx;
-							}
+						if (TypeResponse === "array") {
+							if(!(type in response)) response = {[type]: {[mib.name]: []}};
+							response[type][mib.name].push(value);
 						}
-						response[index] = merge(response[index], {[type]: {[mib.name]: value}});
+						else if (TypeResponse === "json") {
+							response = merge(response, {[type]: {[mib.name]: value}});
+						} else if (TypeResponse === "table") {
+							if ("index_slice" in mib && Array.isArray(mib.index_slice)) {
+								let slice = mib.index_slice;
+								let arr = index.split(".");
+								arr = arr.slice(slice[0], slice[1] || slice.length);
+								let idx = arr.join(".");
+								if (idx !== index) {
+									response[idx] = merge(response[idx], { idx: { [mib.name]: index } });
+									index = idx;
+								}
+							}
+							response[index] = merge(response[index], {[type]: {[mib.name]: value}});
+						}
 					}
 			},
 			(error) => {
@@ -141,19 +150,27 @@ async function get_table(
 	comm,
 	options,
 	oids,
-	maxRepetitions
+	maxRepetitions,
+	limit,
+	reportError
 ) {
 	let resp = {};
 	const session = snmp.createSession(target, comm, options);
 	for (const mib of oids)
-		await streeTable(
+		await streePromise(
 			session,
 			mib.oid,
 			maxRepetitions,
 			mib,
-			resp
+			resp,
+			"table"
 		).catch((error) => {
-			console.error({[mib.name]: error.toString(), host: target});
+			let err = {[mib.name]: error.toString()};
+			if (reportError === "log") {
+				console.error(JSON.stringify({snmperror: {...{host: target}, ...err}}));
+			} else {
+				resp.snmperror = merge(resp.snmperror, err);
+			}
 		});
 	session.close();
 	return resp;
@@ -302,6 +319,38 @@ async function get_walk(
 	reportError
 ) {
 	let resp = {};
+	const session = snmp.createSession(target, comm, options);
+	for (const mib of oids)
+		await streePromise(
+			session,
+			mib.oid,
+			maxRepetitions,
+			mib,
+			resp,
+			TypeResponse || "array"
+		).catch((error) => {
+			let err = {[mib.name]: error.toString()};
+			if (reportError === "log") {
+				console.error(JSON.stringify({snmperror: {...{host: target}, ...err}}));
+			} else {
+				resp.snmperror = merge(resp.snmperror, err);
+			}
+		});
+	session.close();
+	return resp;
+}
+//
+async function get_walk2(
+	target,
+	comm,
+	options,
+	oids,
+	TypeResponse,
+	maxRepetitions,
+	maxIterations,
+	reportError
+) {
+	let resp = {};
 	let oiderror = {};
 	try {
 		const session = snmp.createSession(target, comm, options);
@@ -401,5 +450,6 @@ module.exports = {
 	get_all,
 	read_config,
 	get_walk,
+	get_walk2,
 	snmp_test,
 };
