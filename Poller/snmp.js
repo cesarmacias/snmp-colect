@@ -94,7 +94,7 @@ async function read_config(file, inh, def, newConf) {
 	return config;
 }
 /*
-Funcion para obtener datos tipo tabla (indice compartido) por SNMP
+Funcion para que snmp.subtree trabaje con promesas
 */
 function streePromise(
 	session,
@@ -102,10 +102,12 @@ function streePromise(
 	maxRepetitions,
 	mib,
 	response, 
-	TypeResponse
+	TypeResponse,
+	maxIterations
 ) {
 	return new Promise( (resolve, reject) => {
 		let type = "tag" in mib && mib.tag ? "tag" : "field";
+		let i = 0;
 		session.subtree(
 			oid,
 			maxRepetitions,
@@ -134,6 +136,7 @@ function streePromise(
 							response[index] = merge(response[index], {[type]: {[mib.name]: value}});
 						}
 					}
+				if(maxIterations > 0 && i++ > maxIterations) throw new func.CustomError("snmp", "maxIterations reached");
 			},
 			(error) => {
 				if (error) return reject(error);
@@ -143,7 +146,7 @@ function streePromise(
 	});
 }
 /*
- main function get_table
+Funcion para obtener datos tipo tabla (indice compartido) por SNMP
 */
 async function get_table(
 	target,
@@ -264,48 +267,6 @@ function get_all(target, comm, options, oids, reportError) {
 	});
 }
 /*
-Funcion para que snmp.subtree trabaje con promesas
-*/
-function streePromisified(
-	session,
-	oid,
-	maxRepetitions,
-	mib,
-	TypeResponse,
-	maxIterations
-) {
-	return new Promise(function (resolve, reject) {
-		let i = 0;
-		let response = TypeResponse === "array" ? [] : {};
-		maxRepetitions = maxRepetitions || 20;
-		maxIterations = maxIterations || maxRepetitions;
-		session.subtree(
-			oid,
-			maxRepetitions,
-			async (varbinds) => {
-				if (maxIterations && i++ > maxIterations)
-					reject("maxIterations reached");
-				for (let vb of varbinds)
-					if (!snmp.isVarbindError(vb)) {
-						let value = vb_transform(vb, mib);
-						if (TypeResponse === "array") response.push(value);
-						else {
-							let index = vb.oid.substring(oid.length + 1);
-							response = {
-								...response,
-								[index]: value,
-							};
-						}
-					}
-			},
-			(error) => {
-				if (error) reject(error);
-				else resolve(response);
-			}
-		);
-	});
-}
-/*
 Funcion para obtener datos por snmpwalk
 */
 async function get_walk(
@@ -328,7 +289,8 @@ async function get_walk(
 			maxRepetitions,
 			mib,
 			{},
-			TypeResponse || "array"
+			TypeResponse || "array",
+			maxIterations || 0
 		).catch((error) => {
 			let err = {[mib.name]: error.toString()};
 			if (reportError === "log") {
@@ -342,93 +304,6 @@ async function get_walk(
 	session.close();
 	return resp;
 }
-//
-async function get_walk2(
-	target,
-	comm,
-	options,
-	oids,
-	TypeResponse,
-	maxRepetitions,
-	maxIterations,
-	reportError
-) {
-	let resp = {};
-	let oiderror = {};
-	try {
-		const session = snmp.createSession(target, comm, options);
-		for await (const oid of Object.keys(oids)) {
-			let mib = oids[oid];
-			let type = "tag" in mib && mib.tag ? "tag" : "field";
-			let value = await streePromisified(
-				session,
-				oid,
-				maxRepetitions,
-				mib,
-				TypeResponse,
-				maxIterations
-			).catch((error) => {
-				oiderror.SnmpError =
-          "SnmpError" in oiderror ?
-          	{
-          		...oiderror.SnmpError,
-          		...{
-          			[oids[oid].name]: error.toString(),
-          		},
-          	} :
-          	{
-          		[oids[oid].name]: error.toString(),
-          	};
-			});
-			if (value && typeof value === "object")
-				resp[type] =
-          resp && type in resp ?
-          	{
-          		...resp[type],
-          		...{
-          			[mib.name]: value,
-          		},
-          	} :
-          	{
-          		[mib.name]: value,
-          	};
-		}
-		session.close();
-	} catch (error) {
-		resp = {
-			tag: {
-				SnmpError: error,
-			},
-		};
-		if (reportError === "log") {
-			console.error(JSON.stringify(resp.tag));
-			resp = undefined;
-		}
-	} finally {
-		if (oiderror && "SnmpError" in oiderror) {
-			oiderror.SnmpError = {
-				oids_walk: oiderror.SnmpError,
-			};
-			if (reportError === "log") {
-				console.error(
-					JSON.stringify({
-						...oiderror,
-						host: target,
-					})
-				);
-			} else {
-				resp.tag =
-          "tag" in resp ?
-          	{
-          		...resp.tag,
-          		...oiderror,
-          	} :
-          	oiderror;
-			}
-		}
-		return resp;
-	}
-}
 /*
 	Test SNMP
 */
@@ -438,7 +313,7 @@ async function snmp_test(target, comm, options) {
 	let mib = { 1: { name: "test" } };
 	const session = snmp.createSession(target, comm, options);
 	let message;
-	await streePromisified(session, "1", 1, mib, "array", 1).catch((error) => {
+	await streePromise(session, "1", 1, mib, "array", 1).catch((error) => {
 		message = error.toString();
 	});
 	session.close();
@@ -453,6 +328,5 @@ module.exports = {
 	get_all,
 	read_config,
 	get_walk,
-	get_walk2,
-	snmp_test,
+	snmp_test
 };
