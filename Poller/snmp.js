@@ -112,6 +112,8 @@ function streePromise(
 			oid,
 			maxRepetitions,
 			(varbinds) => {
+				if (TypeResponse === "test") return resolve(true);
+				if(maxIterations > 0 && i++ > maxIterations) return reject("maxIterations reached: " + i);
 				for (let vb of varbinds)
 					if (!snmp.isVarbindError(vb)) {
 						let value = vb_transform(vb, mib);
@@ -136,7 +138,6 @@ function streePromise(
 							response[index] = merge(response[index], {[type]: {[mib.name]: value}});
 						}
 					}
-				if(maxIterations > 0 && i++ > maxIterations) throw new func.CustomError("snmp", "maxIterations reached");
 			},
 			(error) => {
 				if (error) return reject(error);
@@ -313,7 +314,7 @@ async function snmp_test(target, comm, options) {
 	let mib = { 1: { name: "test" } };
 	const session = snmp.createSession(target, comm, options);
 	let message;
-	await streePromise(session, "1", 1, mib, "array", 1).catch((error) => {
+	await streePromise(session, "1", 1, mib, {}, "test").catch((error) => {
 		message = error.toString();
 	});
 	session.close();
