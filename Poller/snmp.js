@@ -187,32 +187,20 @@ async function get_oids(target, comm, options, oids, reportError) {
 		let session = snmp.createSession(target, comm, options);
 		let _oids = Object.keys(oids);
 		session.get(_oids, (error, varbinds) => {
-			let resp;
-			if (error) {
-				resp = {
-					tag: {
-						SnmpError: {
-							error: error.name,
-							host: target,
-							oids: _oids,
-							type: "inh",
-						},
-					},
-				};
-				if (reportError === "log") {
-					console.error(JSON.stringify(resp));
-					resp = undefined;
+			let resp = varbinds.reduce((vbs, vb) => {
+				if (!snmp.isVarbindError(vb)) {
+					vbs[oids[vb.oid]] = vb.value;
+					if (vb.type === snmp.ObjectType.OctetString)
+						vbs[oids[vb.oid]] = vb.value.toString();
+				} else {
+					let err = {[oids[vb.oid]]: snmp.ObjectType[vb.type]};
+					if (reportError === "log")
+						console.error(JSON.stringify({snmperror: {...{host: target}, ...err}}));
+					else
+						vbs[oids[vb.oid]] =  snmp.ObjectType[vb.type];
 				}
-			} else {
-				resp = varbinds.reduce((vbs, vb) => {
-					if (!snmp.isVarbindError(vb)) {
-						vbs[oids[vb.oid]] = vb.value;
-						if (vb.type === snmp.ObjectType.OctetString)
-							vbs[oids[vb.oid]] = vb.value.toString();
-					}
-					return vbs;
-				}, {});
-			}
+				return vbs;
+			}, {});
 			session.close();
 			resolve(resp);
 		});
