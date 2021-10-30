@@ -223,7 +223,6 @@ Funcion para obtener varios datos por snmpget, desde un array de OIDS
 */
 function get_all(target, comm, options, oids, reportError) {
 	return new Promise((resolve) => {
-		let snmpType = {"NoSuchObject": true,"NoSuchInstance": true, "EndOfMibView": true};
 		let session = snmp.createSession(target, comm, options);
 		let _oids = Object.keys(oids);
 		let resp = {};
@@ -232,15 +231,13 @@ function get_all(target, comm, options, oids, reportError) {
 				if (!snmp.isVarbindError(vb)) {
 					let mib = oids[vb.oid];
 					let type = "tag" in mib && mib.tag ? "tag" : "field";
-					if (snmpType[snmp.ObjectType[vb.type]]) {
-						let err = {[mib.name]: snmp.ObjectType[vb.type]};
-						if (reportError === "log")
-							console.error(JSON.stringify({snmperror: {...{host: target}, ...err}}));
-						else
-							resp.snmperror = merge(resp.snmperror, err);
-					}
+					resp[type] = merge(resp[type], {[mib.name]: await vb_transform(vb, mib)});
+				} else {
+					let err = {[oids[vb.oid].name]: snmp.ObjectType[vb.type]};
+					if (reportError === "log")
+						console.error(JSON.stringify({snmperror: {...{host: target}, ...err}}));
 					else
-						resp[type] = merge(resp[type], {[mib.name]: await vb_transform(vb, mib)});
+						resp.snmperror = merge(resp.snmperror, err);
 				}
 			}
 			session.close();
