@@ -113,7 +113,7 @@ function streePromise(
 			maxRepetitions,
 			(varbinds) => {
 				if (TypeResponse === "test") return resolve(true);
-				if(maxIterations > 0 && i++ > maxIterations) return reject("maxIterations reached: " + i);
+				if(maxIterations > 0 && i++ > maxIterations) return resolve({snmperror: {[mib.name]: "maxIterations reached"}});
 				for (let vb of varbinds)
 					if (!snmp.isVarbindError(vb)) {
 						let value = vb_transform(vb, mib);
@@ -223,43 +223,24 @@ Funcion para obtener varios datos por snmpget, desde un array de OIDS
 */
 function get_all(target, comm, options, oids, reportError) {
 	return new Promise((resolve) => {
+		let snmpType = {"NoSuchObject": true,"NoSuchInstance": true, "EndOfMibView": true};
 		let session = snmp.createSession(target, comm, options);
 		let _oids = Object.keys(oids);
 		let resp = {};
 		session.get(_oids, async (error, varbinds) => {
-			if (error) {
-				resp = {
-					tag: {
-						SnmpError: {
-							error: error.name,
-							host: target,
-							oids: _oids,
-							type: "get",
-						},
-					},
-				};
-				if (reportError === "log") {
-					console.error(JSON.stringify(resp));
-					resp = undefined;
-				}
-			} else {
-				for (const vb of varbinds) {
-					if (!snmp.isVarbindError(vb)) {
-						let mib = oids[vb.oid];
-						let type = "tag" in mib && mib.tag ? "tag" : "field";
-						let name = mib.name;
-						resp[type] =
-              resp && type in resp ?
-              	{
-              		...resp[type],
-              		...{
-              			[name]: await vb_transform(vb, mib),
-              		},
-              	} :
-              	{
-              		[name]: await vb_transform(vb, mib),
-              	};
+			for (const vb of varbinds) {
+				if (!snmp.isVarbindError(vb)) {
+					let mib = oids[vb.oid];
+					let type = "tag" in mib && mib.tag ? "tag" : "field";
+					if (snmpType[snmp.ObjectType[vb.type]]) {
+						let err = {[mib.name]: snmp.ObjectType[vb.type]};
+						if (reportError === "log")
+							console.error(JSON.stringify({snmperror: {...{host: target}, ...err}}));
+						else
+							resp.snmperror = merge(resp.snmperror, err);
 					}
+					else
+						resp[type] = merge(resp[type], {[mib.name]: await vb_transform(vb, mib)});
 				}
 			}
 			session.close();
