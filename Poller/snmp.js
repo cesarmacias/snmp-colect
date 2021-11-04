@@ -215,17 +215,26 @@ function get_all(target, comm, options, oids, reportError) {
 		let _oids = Object.keys(oids);
 		let resp = {};
 		session.get(_oids, async (error, varbinds) => {
-			for (const vb of varbinds) {
-				if (!snmp.isVarbindError(vb)) {
-					let mib = oids[vb.oid];
-					let type = "tag" in mib && mib.tag ? "tag" : "field";
-					resp[type] = merge(resp[type], {[mib.name]: await vb_transform(vb, mib)});
+			if (error) { 
+				let err = {get_oids: error.toString()};
+				if (reportError === "log") {
+					console.error(JSON.stringify({snmperror: {...{host: target}, ...err}}));
 				} else {
-					let err = {[oids[vb.oid].name]: snmp.ObjectType[vb.type]};
-					if (reportError === "log")
-						console.error(JSON.stringify({snmperror: {...{host: target}, ...err}}));
-					else
-						resp.snmperror = merge(resp.snmperror, err);
+					resp.snmperror = err;
+				}
+			} else {
+				for (const vb of varbinds) {
+					if (!snmp.isVarbindError(vb)) {
+						let mib = oids[vb.oid];
+						let type = "tag" in mib && mib.tag ? "tag" : "field";
+						resp[type] = merge(resp[type], {[mib.name]: await vb_transform(vb, mib)});
+					} else {
+						let err = {[oids[vb.oid].name]: snmp.ObjectType[vb.type]};
+						if (reportError === "log")
+							console.error(JSON.stringify({snmperror: {...{host: target}, ...err}}));
+						else
+							resp.snmperror = merge(resp.snmperror, err);
+					}
 				}
 			}
 			session.close();
