@@ -43,11 +43,7 @@ async function process_target(target, conf, inhObj) {
 				}
 				const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.reportError);
 				for (let k in part) {
-					let doc = part[k];
-					if ("index" in table.options && table.options.index) doc.tag.index = k;
-					if ("pollertime" in conf) doc.pollertime = conf.pollertime;
-					doc.tag.agent_host = target;
-					doc.measurement_name = table.options.measurement;
+					let doc = ("index" in table.options && table.options.index) ? merge(part[k], {"tag": {"agent_host": target, "index": k}, "measurement_name": table.options.measurement, "pollertime": conf.pollertime}) : merge(part[k], {"tag": {"agent_host": target}, "measurement_name": table.options.measurement, "pollertime": conf.pollertime});
 					let collected = print_ndjson(doc, inh, inhObj);
 					result.push(collected);
 				}
