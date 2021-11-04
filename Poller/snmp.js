@@ -155,7 +155,6 @@ async function get_table(
 	options,
 	oids,
 	maxRepetitions,
-	limit,
 	reportError
 ) {
 	let resp = {};
@@ -167,7 +166,8 @@ async function get_table(
 			maxRepetitions,
 			mib,
 			resp,
-			"table"
+			"table",
+			0
 		).catch((error) => {
 			let err = {[mib.name]: error.toString()};
 			if (reportError === "log") {

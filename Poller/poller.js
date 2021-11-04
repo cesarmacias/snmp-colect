@@ -41,7 +41,7 @@ async function process_target(target, conf, inhObj) {
 					console.error(new func.CustomError("Config", "No ha declarado options dentro de table"));
 					continue;
 				}
-				const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.limit, conf.reportError);
+				const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.reportError);
 				for (let k in part) {
 					let doc = part[k];
 					if ("index" in table.options && table.options.index) doc.tag.index = k;
