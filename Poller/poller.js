@@ -81,11 +81,10 @@ async function start() {
 		const expect = ["hosts", "options"];
 		const defaultVal = {
 			"maxRepetitions": 50,
-			"limit": 1,
 			"time": true,
 			"ConLimit": 3000,
-			"maxIterations": 20,
-			"reportError": "log",
+			"maxIterations": 0,
+			"reportError": "json",
 			"community": "public"
 		};
 		let conf = await poller.read_config(args.config, expect, defaultVal, true);
