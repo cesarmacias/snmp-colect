@@ -31,27 +31,26 @@ async function process_target(target, conf, inhObj) {
 		const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids, conf.reportError) : false;
 		let result = [];
 		if ("table" in conf) {
-			for (const table of conf.table) {
+			await Promise.all(conf.table.map(async (table)=> {
+				let flag = true;
 				if ("options" in table) {
 					if (!("measurement" in table.options)) {
 						console.error(new func.CustomError("Config", "No ha declarado measurement dentro de table"));
-						continue;
+						flag = false;
 					}
 				} else {
 					console.error(new func.CustomError("Config", "No ha declarado options dentro de table"));
-					continue;
+					flag = false;
 				}
-				const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.limit, conf.reportError);
-				for (let k in part) {
-					let doc = part[k];
-					if ("index" in table.options && table.options.index) doc.tag.index = k;
-					if ("pollertime" in conf) doc.pollertime = conf.pollertime;
-					doc.tag.agent_host = target;
-					doc.measurement_name = table.options.measurement;
-					let collected = print_ndjson(doc, inh, inhObj);
-					result.push(collected);
+				if (flag) {
+					const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.reportError);
+					for (let k in part) {
+						let doc = ("index" in table.options && table.options.index) ? merge(part[k], {"tag": {"agent_host": target, "index": k}, "measurement_name": table.options.measurement, "pollertime": conf.pollertime}) : merge(part[k], {"tag": {"agent_host": target}, "measurement_name": table.options.measurement, "pollertime": conf.pollertime});
+						let collected = print_ndjson(doc, inh, inhObj);
+						result.push(collected);
+					}
 				}
-			}
+			}));
 		}
 		if ("oids_get" in conf || "oids_walk" in conf) {
 			if ("oids_get" in conf) {
@@ -70,7 +69,7 @@ async function process_target(target, conf, inhObj) {
 		if("reportError" in conf && conf.reportError == "log") {
 			console.error("SNMP_RequestTimedOut:" + target);
 		} else {
-			obj = merge(obj, {tag: { SnmpError: { error: "RequestTimedOut" }}});
+			obj = merge(obj, {snmperror: { host: "RequestTimedOut" }});
 			print_ndjson(obj, undefined, inhObj);
 		}
 	}
@@ -81,11 +80,10 @@ async function start() {
 		const expect = ["hosts", "options"];
 		const defaultVal = {
 			"maxRepetitions": 50,
-			"limit": 1,
 			"time": true,
 			"ConLimit": 3000,
-			"maxIterations": 20,
-			"reportError": "log",
+			"maxIterations": 0,
+			"reportError": "json",
 			"community": "public"
 		};
 		let conf = await poller.read_config(args.config, expect, defaultVal, true);

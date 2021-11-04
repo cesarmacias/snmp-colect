@@ -6,9 +6,10 @@ const poller = require("./snmp.js");
 const args = require("minimist")(process.argv.slice(2));
 const fs = require("fs");
 const throat = require("throat");
+const merge = require("deepmerge");
 
 async function filter_vendor(vendorList, mac, oids_get) {
-	let vendor = await vendorList.find((vendorItem) => {
+	let vendor = vendorList.find((vendorItem) => {
 		return (
 			vendorItem.oui.findIndex((ouiItem) => {
 				return ouiItem === mac.substring(0, 6);
@@ -18,37 +19,33 @@ async function filter_vendor(vendorList, mac, oids_get) {
 	let vendorName = vendor ? vendor.vendor : "";
 	let keyNames = Object.keys(oids_get);
 	let oids = {};
-	for await (let key of keyNames) {
+	for (let key of keyNames) {
 		if (!oids_get[key].vendor || oids_get[key].vendor.includes(vendorName))
 			oids[key] = oids_get[key];
 	}
-
 	return oids;
 }
 
 async function process_target(target, comm, opt, oids, vendorList, mac, maxRepetitions, maxIterations) {
-	try {
-		let get = {};
-		let walk = {};
-		let obj = {};
-		if ("get" in oids && oids.get) {
-			let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.get) : oids.get;
-			get = await poller.get_all(target, comm, opt, filterOids);
-		}
-		if ("walk" in oids && oids.walk) {
-			let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.walk) : oids.walk;
-			walk = await poller.get_walk(target, comm, opt, filterOids, "array", maxRepetitions, maxIterations);
-		}
-		for (let k of ["tag", "field"]) {
-			if (k in get) {
-				obj[k] = walk && k in walk ? {...get[k], ...walk[k]} : get[k];
-			} else {
-				obj[k] = walk && k in walk ? walk[k] : undefined;
+	if (await poller.snmp_test(target, comm, JSON.parse(JSON.stringify(opt)))){
+		try {
+			let obj = {};
+			if ("get" in oids && oids.get) {
+				let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.get) : oids.get;
+				let part = await poller.get_all(target, comm, opt, filterOids);
+				obj = merge(obj,part);
 			}
+			if ("walk" in oids && oids.walk) {
+				let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.walk) : oids.walk;
+				let part = await poller.get_walk(target, comm, opt, filterOids, "array", maxRepetitions, maxIterations);
+				obj = merge(obj,part);
+			}
+			return obj;
+		} catch (error) {
+			return {"tag": {"CmError": error.message}};
 		}
-		return obj;
-	} catch (error) {
-		return {"tag": {"CmError": error.message}};
+	} else {
+		return {"snmperror": { "host": "RequestTimedOut"}};
 	}
 }
 
@@ -66,7 +63,7 @@ async function run(file) {
 			regExp = new RegExp(conf.filter);
 			filter = true;
 		}
-		const ConLimit = "ConLimit" in conf ? conf.ConLimit : 1000;
+		const ConLimit = "ConLimit" in conf ? conf.ConLimit : 3000;
 		const rl = readline.createInterface({
 			input: process.stdin,
 			output: process.stdout,
@@ -79,7 +76,7 @@ async function run(file) {
 			oids = {"walk": conf.oids_walk};
 		}
 		rl.on("line", throat(ConLimit, async (line) => {
-			const obj = JSON.parse(line);
+			let obj = JSON.parse(line);
 			const target = obj.tag[conf.iterable];
 			const MacAddr = "filtered" in conf ? obj.tag[conf.filtered] : undefined;
 			let result = {};
@@ -96,10 +93,7 @@ async function run(file) {
 			} else {
 				obj.tag.CmError = "Not IP";
 			}
-			for (let k of ["tag", "field"]) {
-				if (result && k in result)
-					obj[k] = {...obj[k], ...result[k]};
-			}
+			obj = merge(obj, result);
 			if ("measurement" in conf) {
 				obj.measurement_name = conf.measurement;
 			}
