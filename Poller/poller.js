@@ -70,7 +70,7 @@ async function process_target(target, conf, inhObj) {
 		if("reportError" in conf && conf.reportError == "log") {
 			console.error("SNMP_RequestTimedOut:" + target);
 		} else {
-			obj = merge(obj, {tag: { SnmpError: { error: "RequestTimedOut" }}});
+			obj = merge(obj, {snmperror: { host: "RequestTimedOut" }});
 			print_ndjson(obj, undefined, inhObj);
 		}
 	}

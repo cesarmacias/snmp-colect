@@ -45,7 +45,7 @@ async function process_target(target, comm, opt, oids, vendorList, mac, maxRepet
 			return {"tag": {"CmError": error.message}};
 		}
 	} else {
-		return {"tag": {"CmError": "SNMP_RequestTimedOut"}};
+		return {"snmperror": { "host": "RequestTimedOut"}};
 	}
 }
 
@@ -63,7 +63,7 @@ async function run(file) {
 			regExp = new RegExp(conf.filter);
 			filter = true;
 		}
-		const ConLimit = "ConLimit" in conf ? conf.ConLimit : 1000;
+		const ConLimit = "ConLimit" in conf ? conf.ConLimit : 3000;
 		const rl = readline.createInterface({
 			input: process.stdin,
 			output: process.stdout,
