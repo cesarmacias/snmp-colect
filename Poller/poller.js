@@ -31,23 +31,26 @@ async function process_target(target, conf, inhObj) {
 		const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids, conf.reportError) : false;
 		let result = [];
 		if ("table" in conf) {
-			for (const table of conf.table) {
+			await Promise.all(conf.table.map(async (table)=> {
+				let flag = true;
 				if ("options" in table) {
 					if (!("measurement" in table.options)) {
 						console.error(new func.CustomError("Config", "No ha declarado measurement dentro de table"));
-						continue;
+						flag = false;
 					}
 				} else {
 					console.error(new func.CustomError("Config", "No ha declarado options dentro de table"));
-					continue;
+					flag = false;
 				}
-				const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.reportError);
-				for (let k in part) {
-					let doc = ("index" in table.options && table.options.index) ? merge(part[k], {"tag": {"agent_host": target, "index": k}, "measurement_name": table.options.measurement, "pollertime": conf.pollertime}) : merge(part[k], {"tag": {"agent_host": target}, "measurement_name": table.options.measurement, "pollertime": conf.pollertime});
-					let collected = print_ndjson(doc, inh, inhObj);
-					result.push(collected);
+				if (flag) {
+					const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.reportError);
+					for (let k in part) {
+						let doc = ("index" in table.options && table.options.index) ? merge(part[k], {"tag": {"agent_host": target, "index": k}, "measurement_name": table.options.measurement, "pollertime": conf.pollertime}) : merge(part[k], {"tag": {"agent_host": target}, "measurement_name": table.options.measurement, "pollertime": conf.pollertime});
+						let collected = print_ndjson(doc, inh, inhObj);
+						result.push(collected);
+					}
 				}
-			}
+			}));
 		}
 		if ("oids_get" in conf || "oids_walk" in conf) {
 			if ("oids_get" in conf) {
