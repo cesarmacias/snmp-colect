@@ -44,8 +44,9 @@ function vb_transform(vb, oid) {
 						value[oid.map[i - 1]] = arr[i];
 				}
 			}
-		} else if ("split" in oid && typeof split.oid === "string") {
-			value = value.split(split.oid);
+		} else if ("split" in oid && typeof oid.split === "string") {
+			let v = value.split(oid.split);
+			value = v.length === 1 ? v[0] : v;
 		}
 	} else if (vb.type === snmp.ObjectType.Counter64) {
 		value = 0;
@@ -57,9 +58,9 @@ function vb_transform(vb, oid) {
 	let resp = value;
 	if ("conversion" in oid) {
 		if (oid.conversion === "ipv4") {
-			resp = Array.isArray(value) ? value.map( (x) => {addr_convert(x)}) : addr_convert(value);
+			resp = Array.isArray(value) ? value.map( (x) => {return addr_convert(x)}) : addr_convert(value);
 		} else if (oid.conversion === "number") {
-			resp = Array.isArray(value) ? value.map( (x) => {x * 1}) : value * 1;
+			resp = Array.isArray(value) ? value.map( (x) => {return x * 1}) : value * 1;
 		}
 	}
 	return resp;
