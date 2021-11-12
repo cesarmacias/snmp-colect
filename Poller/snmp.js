@@ -33,8 +33,9 @@ function vb_transform(vb, oid) {
 	let value = vb.value;
 	if (vb.type === snmp.ObjectType.OctetString) {
 		value = vb.value.toString();
-		if ("type" in oid && oid.type === "hex") value = vb.value.toString("hex");
-		if ("type" in oid && oid.type === "regex") {
+		if ("type" in oid && oid.type === "hex")  {
+			value = vb.value.toString("hex");
+		} else if ("type" in oid && oid.type === "regex") {
 			if ("regex" in oid && "map" in oid) {
 				let arr = value.match(new RegExp(oid.regex));
 				if (arr) {
@@ -43,6 +44,8 @@ function vb_transform(vb, oid) {
 						value[oid.map[i - 1]] = arr[i];
 				}
 			}
+		} else if ("split" in oid && typeof split.oid === "string") {
+			value = value.split(split.oid);
 		}
 	} else if (vb.type === snmp.ObjectType.Counter64) {
 		value = 0;
@@ -54,9 +57,9 @@ function vb_transform(vb, oid) {
 	let resp = value;
 	if ("conversion" in oid) {
 		if (oid.conversion === "ipv4") {
-			resp = addr_convert(value);
+			resp = Array.isArray(value) ? value.map( (x) => {addr_convert(x)}) : addr_convert(value);
 		} else if (oid.conversion === "number") {
-			resp = value * 1;
+			resp = Array.isArray(value) ? value.map( (x) => {x * 1}) : value * 1;
 		}
 	}
 	return resp;

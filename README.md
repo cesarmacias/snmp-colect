@@ -39,9 +39,12 @@ Example: the ifHCInOctets (if-mib) that are a counter and is not useful to index
 
 Configuration inside of OID context:
 
-- "type": [ hex ] transform value in hex to string
+- "type": [ hex, regex ] transform value in hex to string or split the result using a regular expresion, has to define "regex"
 - "conversion": [ ipv4, number ] transform value in ipv4 or number
 - "index_slice": [ int, int ] apply slice function to oid index (only for table)
+- "regex": string of regular expresion to use
+- "map": array of name of fields result of regex convertion usin the $ positions
+- "split": define the split string to split the string result in array
 
 ## Execution
 
@@ -101,6 +104,14 @@ Version 1.3.4
 - Feature:
   - get_table/index_slice add slice function to index per OID in Table
   - update README
+
+Version 1.3.5
+
+- Feature:
+  - add split function to strig response to return array, can be used with conversions
+
+- correct bugs:
+  - bug table snmperror
 
 ## Requests
 
