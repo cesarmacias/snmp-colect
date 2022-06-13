@@ -8,8 +8,9 @@
         "port": 5432,
         "database": "db_test"
       },
-      "sql": "SELECT t.ip, t.mac as \"tag.mac\", t.nodo as \"tag.nodo\", t.cmts as \"tag.cmts\", t.id as \"tag.fuente\" FROM public.hfc_tp t WHERE t.tipo = 'fuente'",
-      "ipField": "ip"
+      "sql": "SELECT t.ip, t.comm, t.mac as \"tag.mac\", t.nodo as \"tag.nodo\", t.cmts as \"tag.cmts\", t.id as \"tag.fuente\" FROM public.hfc_tp t WHERE t.tipo = 'fuente'",
+      "ipField": "ip",
+      "comField": "comm"
     },
     "community": "public",
     "maxIterations": 5,
