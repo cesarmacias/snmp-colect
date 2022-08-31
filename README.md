@@ -117,6 +117,10 @@ Version 1.3.6
 
 - List of hosts in database can  receive IP (ipField), Community (comField) and other atributes from SQL query. examples/config_dbconect.json
 
+Version 1.4
+
+- Add support to SNMP V3
+
 ## Requests
 
 - unify poller.js and poller-cm.js
