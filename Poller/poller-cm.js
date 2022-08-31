@@ -1,4 +1,5 @@
-/*jslint node: true */
+#!/usr/bin/env node
+/* eslint-disable no-mixed-spaces-and-tabs */
 "use strict";
 
 const readline = require("readline");
