@@ -120,6 +120,7 @@ Version 1.3.6
 Version 1.4
 
 - Add support to SNMP V3
+- Add run env
 
 ## Requests
 
