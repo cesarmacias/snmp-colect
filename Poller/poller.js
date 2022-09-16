@@ -28,8 +28,9 @@ async function process_target(target, conf, inhObj) {
 		"pollertime": conf.pollertime,
 		"tag": {"agent_host": target}
 	};
-	if (await poller.snmp_test(target, conf.community, JSON.parse(JSON.stringify(conf.options)))){
-		const inh = ("inh_oids" in conf) ? await poller.get_oids(target, conf.community, conf.options, conf.inh_oids, conf.reportError) : false;
+	let session = await poller.create_session(target, conf.options, conf.community, conf.user); 
+	if (await poller.snmp_test(target, conf.community, JSON.parse(JSON.stringify(conf.options)), conf.user)){
+		const inh = ("inh_oids" in conf) ? await poller.get_oids(target, session, conf.inh_oids, conf.reportError) : false;
 		let result = [];
 		if ("table" in conf) {
 			await Promise.all(conf.table.map(async (table)=> {
@@ -70,6 +71,7 @@ async function process_target(target, conf, inhObj) {
 			let collected = print_ndjson(obj, inh, inhObj);
 			result.push(collected);
 		}
+		session.close();
 		return result;
 	} else {
 		if("reportError" in conf && conf.reportError == "log") {

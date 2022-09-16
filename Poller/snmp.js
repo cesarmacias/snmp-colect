@@ -84,16 +84,20 @@ async function read_config(file, inh, def, newConf) {
 		if (!("measurement" in config))
 			throw new func.CustomError("Config", "measurement is not defined");
 	}
-	if ("options" in config)
-		if ("version" in config.options)
-			config.options.version =
-        config.options.version === "1" ? snmp.Version1 : snmp.Version2c;
 	if (def && func.isObject(def)) {
 		for (const key in def) {
 			if (Object.prototype.hasOwnProperty.call(def, key)) {
 				if (!(key in config)) config[key] = def[key];
 			}
 		}
+	}
+	if ("version" in config.options)
+		config.options.version = snmp.Version[config.options.version];
+	else
+		config.options.version = snmp.Version1;
+	if (config.options.version == snmp.Version3) {
+		if (!("user" in config && func.isObject(config.user)))
+			throw new func.CustomError("Config", "snmpV3 user is not defined");
 	}
 	return config;
 }
@@ -186,9 +190,8 @@ async function get_table(
 /*
 Funcion para obtener datos snmpget para ser heredados en las tablas
 */
-async function get_oids(target, comm, options, oids, reportError) {
+async function get_oids(target, session, oids, reportError) {
 	return new Promise((resolve) => {
-		let session = snmp.createSession(target, comm, options);
 		let _oids = Object.keys(oids);
 		session.get(_oids, (error, varbinds) => {
 			let resp = varbinds.reduce((vbs, vb) => {
@@ -205,7 +208,6 @@ async function get_oids(target, comm, options, oids, reportError) {
 				}
 				return vbs;
 			}, {});
-			session.close();
 			resolve(resp);
 		});
 	});
@@ -285,13 +287,25 @@ async function get_walk(
 	return resp;
 }
 /*
+	Create session
+*/
+async function create_session(target, options, community, user) {
+	let session;
+	if (options.version == snmp.Version3) {
+		session = snmp.createV3Session (target, user, options);
+	} else {
+		session = snmp.createSession(target, community, options);
+	}
+	return session;
+}
+/*
 	Test SNMP
 */
-async function snmp_test(target, comm, options) {
+async function snmp_test(target, comm, options, user) {
 	options.timeout = 500;
 	options.retries = 2;
 	let mib = { 1: { name: "test" } };
-	const session = snmp.createSession(target, comm, options);
+	const session = create_session(target, options, comm, user);
 	let message;
 	await streePromise(session, "1", 1, mib, {}, "test").catch((error) => {
 		message = error.toString();
@@ -308,5 +322,6 @@ module.exports = {
 	get_all,
 	read_config,
 	get_walk,
-	snmp_test
+	snmp_test,
+	create_session
 };
