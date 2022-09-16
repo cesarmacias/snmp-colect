@@ -27,26 +27,29 @@ async function filter_vendor(vendorList, mac, oids_get) {
 	return oids;
 }
 
-async function process_target(target, comm, opt, oids, vendorList, mac, maxRepetitions, maxIterations) {
-	if (await poller.snmp_test(target, comm, JSON.parse(JSON.stringify(opt)))){
+async function process_target(target, comm, opt, user, oids, vendorList, mac, maxRepetitions, maxIterations) {
+	let session = await poller.create_session(target, opt, comm, user); 
+	let test = await poller.snmp_test(target, comm, JSON.parse(JSON.stringify(opt)));
+	if (test === undefined){
 		try {
 			let obj = {};
 			if ("get" in oids && oids.get) {
 				let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.get) : oids.get;
-				let part = await poller.get_all(target, comm, opt, filterOids);
+				let part = await poller.get_all(target, session, filterOids);
 				obj = merge(obj,part);
 			}
 			if ("walk" in oids && oids.walk) {
 				let filterOids = (vendorList && mac) ? await filter_vendor(vendorList, mac, oids.walk) : oids.walk;
-				let part = await poller.get_walk(target, comm, opt, filterOids, "array", maxRepetitions, maxIterations);
+				let part = await poller.get_walk(target, session, filterOids, "array", maxRepetitions, maxIterations);
 				obj = merge(obj,part);
 			}
+			session.close();
 			return obj;
 		} catch (error) {
 			return {"tag": {"CmError": error.message}};
 		}
 	} else {
-		return {"snmperror": { "host": "RequestTimedOut"}};
+		return {"snmperror": { "host": test}};
 	}
 }
 
@@ -84,12 +87,12 @@ async function run(file) {
 			if (target && target !== "0.0.0.0") {
 				if (filter) {
 					if (MacAddr && regExp.test(MacAddr)) {
-						result = await process_target(target, conf.community, conf.options, oids, vendorList, MacAddr, conf.maxRepetitions, conf.maxIterations);
+						result = await process_target(target, conf.community, conf.options, conf.user, oids, vendorList, MacAddr, conf.maxRepetitions, conf.maxIterations);
 					} else {
 						obj.tag.CmError = "Not Cable Modem";
 					}
 				} else {
-					result = await process_target(target, conf.community, conf.options, oids, vendorList, MacAddr, conf.maxRepetitions, conf.maxIterations);
+					result = await process_target(target, conf.community, conf.options, conf.user, oids, vendorList, MacAddr, conf.maxRepetitions, conf.maxIterations);
 				}
 			} else {
 				obj.tag.CmError = "Not IP";
