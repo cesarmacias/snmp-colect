@@ -29,7 +29,8 @@ async function process_target(target, conf, inhObj) {
 		"tag": {"agent_host": target}
 	};
 	let session = await poller.create_session(target, conf.options, conf.community, conf.user); 
-	if (await poller.snmp_test(target, conf.community, JSON.parse(JSON.stringify(conf.options)), conf.user)){
+	let test = await poller.snmp_test(target, conf.community, JSON.parse(JSON.stringify(conf.options)), conf.user);
+	if (test === undefined){
 		const inh = ("inh_oids" in conf) ? await poller.get_oids(target, session, conf.inh_oids, conf.reportError) : false;
 		let result = [];
 		if ("table" in conf) {
@@ -77,7 +78,7 @@ async function process_target(target, conf, inhObj) {
 		if("reportError" in conf && conf.reportError == "log") {
 			console.error("SNMP_RequestTimedOut:" + target);
 		} else {
-			obj = merge(obj, {snmperror: { host: "RequestTimedOut" }});
+			obj = merge(obj, {snmperror: { host: test }});
 			print_ndjson(obj, undefined, inhObj);
 		}
 	}

@@ -311,12 +311,12 @@ async function snmp_test(target, comm, options, user) {
 	options.retries = 2;
 	let mib = { 1: { name: "test" } };
 	const session = await create_session(target, options, comm, user);
-	let message;
+	let message = undefined;
 	await streePromise(session, "1", 1, mib, {}, "test").catch((error) => {
 		message = error.toString();
 	});
 	session.close();
-	return !/RequestTimedOut/i.test(message);
+	return message;
 }
 /*
 Funciones a Exportar
