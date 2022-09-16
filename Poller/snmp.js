@@ -97,7 +97,7 @@ async function read_config(file, inh, def, newConf) {
 		config.options.version = snmp.Version1;
 	if (config.options.version == snmp.Version3) {
 		if ("user" in config && "name" in config.user && "level" in config.user) {
-			config.user.level = "level" in snmp.SecurityLevel[config.user.level] || 1;
+			config.user.level = snmp.SecurityLevel[config.user.level] || 1;
 			config.user.authProtocol = snmp.AuthProtocols[config.user.authProtocol] || undefined;
 			config.user.privProtocol = snmp.PrivProtocols[config.user.privProtocol] || undefined;
 
