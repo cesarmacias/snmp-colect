@@ -46,7 +46,7 @@ async function process_target(target, conf, inhObj) {
 					flag = false;
 				}
 				if (flag) {
-					const part = await poller.get_table(target, conf.community, conf.options, table.oids, conf.maxRepetitions, conf.reportError);
+					const part = await poller.get_table(target, session, table.oids, conf.maxRepetitions, conf.reportError);
 					for (let k in part) {
 						let doc = {};
 						if (k !== "snmperror") {
@@ -62,11 +62,11 @@ async function process_target(target, conf, inhObj) {
 		}
 		if ("oids_get" in conf || "oids_walk" in conf) {
 			if ("oids_get" in conf) {
-				let get = await poller.get_all(target, conf.community, conf.options, conf.oids_get, conf.reportError);
+				let get = await poller.get_all(target, session, conf.oids_get, conf.reportError);
 				if (func.isObject(get)) obj = merge(obj, get);
 			}
 			if ("oids_walk" in conf) {
-				let walk = await poller.get_walk(target, conf.community, conf.options, conf.oids_walk, "array", conf.maxRepetitions, conf.maxIterations, conf.reportError);
+				let walk = await poller.get_walk(target, session, conf.oids_walk, "array", conf.maxRepetitions, conf.maxIterations, conf.reportError);
 				if (func.isObject(walk)) obj = merge(obj, walk);
 			}
 			let collected = print_ndjson(obj, inh, inhObj);

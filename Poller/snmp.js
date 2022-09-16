@@ -164,14 +164,12 @@ Funcion para obtener datos tipo tabla (indice compartido) por SNMP
 */
 async function get_table(
 	target,
-	comm,
-	options,
+	session,
 	oids,
 	maxRepetitions,
 	reportError
 ) {
 	let resp = {};
-	const session = snmp.createSession(target, comm, options);
 	for (const mib of oids)
 		await streePromise(
 			session,
@@ -189,7 +187,6 @@ async function get_table(
 				resp.snmperror = merge(resp.snmperror, err);
 			}
 		});
-	session.close();
 	return resp;
 }
 /*
@@ -220,9 +217,8 @@ async function get_oids(target, session, oids, reportError) {
 /*
 Funcion para obtener varios datos por snmpget, desde un array de OIDS
 */
-function get_all(target, comm, options, oids, reportError) {
+function get_all(target, session, oids, reportError) {
 	return new Promise((resolve) => {
-		let session = snmp.createSession(target, comm, options);
 		let _oids = Object.keys(oids);
 		let resp = {};
 		session.get(_oids, async (error, varbinds) => {
@@ -248,7 +244,6 @@ function get_all(target, comm, options, oids, reportError) {
 					}
 				}
 			}
-			session.close();
 			resolve(resp);
 		});
 	});
@@ -258,8 +253,7 @@ Funcion para obtener datos por snmpwalk
 */
 async function get_walk(
 	target,
-	comm,
-	options,
+	session,
 	oids,
 	TypeResponse,
 	maxRepetitions,
@@ -267,7 +261,6 @@ async function get_walk(
 	reportError
 ) {
 	let resp = {};
-	const session = snmp.createSession(target, comm, options);
 	for (const oid of Object.keys(oids)){
 		let mib = oids[oid];
 		let part = await streePromise(
@@ -288,7 +281,6 @@ async function get_walk(
 		});
 		resp = merge(resp, part);
 	}
-	session.close();
 	return resp;
 }
 /*
