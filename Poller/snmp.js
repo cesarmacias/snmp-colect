@@ -96,7 +96,12 @@ async function read_config(file, inh, def, newConf) {
 	else
 		config.options.version = snmp.Version1;
 	if (config.options.version == snmp.Version3) {
-		if (!("user" in config && func.isObject(config.user)))
+		if ("user" in config && "name" in config.user && "level" in config.user) {
+			config.user.level = "level" in snmp.SecurityLevel[config.user.level] || 1;
+			config.user.authProtocol = snmp.AuthProtocols[config.user.authProtocol] || undefined;
+			config.user.privProtocol = snmp.PrivProtocols[config.user.privProtocol] || undefined;
+
+		} else
 			throw new func.CustomError("Config", "snmpV3 user is not defined");
 	}
 	return config;
@@ -305,7 +310,7 @@ async function snmp_test(target, comm, options, user) {
 	options.timeout = 500;
 	options.retries = 2;
 	let mib = { 1: { name: "test" } };
-	const session = create_session(target, options, comm, user);
+	const session = await create_session(target, options, comm, user);
 	let message;
 	await streePromise(session, "1", 1, mib, {}, "test").catch((error) => {
 		message = error.toString();
