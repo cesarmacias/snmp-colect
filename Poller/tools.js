@@ -70,7 +70,8 @@ class CustomError extends Error {
 	Function to get value of object sending in dot notation
  */
 function get_ObjValue(obj, str) {
-	let arr = str.split(".");
+	let string = str.toString();
+	let arr = string.split(".");
 	let resp = obj;
 	for (let key of arr) {
 		if (key in resp) {
@@ -90,5 +91,6 @@ module.exports = {
 	isObject,
 	ObjExpand,
 	get_ObjValue,
-	del_field_obj
+	del_field_obj,
+	parseDotNotation
 };
