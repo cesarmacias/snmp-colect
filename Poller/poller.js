@@ -299,4 +299,6 @@ if ("config" in args) {
   start().catch((error) => {
     console.error(error);
   });
+} else {
+  console.error("Not defined --config");
 }
